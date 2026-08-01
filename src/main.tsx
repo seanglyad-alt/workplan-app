@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode, StrictMode } from 'react';
+import React, { Component, ErrorInfo, ReactNode, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
@@ -12,8 +12,9 @@ interface State {
   error: Error | null;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
+class ErrorBoundary extends React.Component<Props, State> {
+  readonly props!: Props;
+  state: State = {
     hasError: false,
     error: null
   };

@@ -8,8 +8,9 @@ import {
   BarChart2, Calendar, MessageSquare, Settings, Bell, 
   Sparkles, Video, Play, CheckCircle2, XCircle, Trash2, CalendarRange, Clock, ThumbsUp, Heart, RefreshCw, Layers,
   Facebook, LogOut, User, Info, Pause, CheckSquare, Square,
-  Lock, Eye, EyeOff, ShieldCheck, Fingerprint, LogIn, Key, Mail, Moon, Sun, Table, Globe, Printer, PlusCircle, ChevronDown, Check
+  Lock, Eye, EyeOff, ShieldCheck, Fingerprint, LogIn, Key, Mail, Moon, Sun, Table, Globe, Printer, PlusCircle, ChevronDown, Check, Menu, X
 } from "lucide-react";
+
 import { motion, AnimatePresence } from "motion/react";
 import Dashboard from "./components/Dashboard";
 import PowerEditor from "./components/PowerEditor";
@@ -40,6 +41,7 @@ export default function App() {
   const [workPlanOnOpenNewPost, setWorkPlanOnOpenNewPost] = useState<(() => void) | null>(null);
   const [workPlanOnOpenCreateMonth, setWorkPlanOnOpenCreateMonth] = useState<(() => void) | null>(null);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // Memoized Sync Callbacks to prevent infinite re-render loops
   const handleCountsUpdate = useCallback((counts: { week: number; month: number; pages: number }) => {
@@ -954,326 +956,639 @@ export default function App() {
     <div className={`min-h-screen flex flex-col justify-between selection:bg-blue-500/30 selection:text-blue-200 ${theme === "light" ? "bg-slate-100 text-slate-900" : "bg-[#0a0a0b] text-slate-200"}`}>
       
       {/* 1. TOP GLOBAL NAVIGATION HEADER */}
-      <header className={`print-hide sticky top-0 z-40 backdrop-blur-md px-4 py-2.5 print:hidden ${theme === "light" ? "bg-white/90 border-b border-slate-200/60 text-slate-900 shadow-sm" : "bg-[#0f0f12]/95 border-b border-white/[0.08] text-slate-200 shadow-xl"}`}>
-        <div className="max-w-[1850px] mx-auto flex flex-col xl:flex-row items-center justify-between gap-3">
+      <header className={`print-hide sticky top-0 z-40 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-2.5 print:hidden border-b transition-colors ${
+        theme === "light"
+          ? "bg-white/90 border-slate-200/80 text-slate-900 shadow-sm"
+          : "bg-[#0f0f12]/95 border-white/[0.08] text-slate-200 shadow-xl"
+      }`}>
+        <div className="max-w-[1850px] mx-auto">
           
-          {/* Brand Logo - Click to toggle Dashboard */}
-          <button
-            type="button"
-            onClick={() => {
-              if (workPlanTab === "dashboard") {
-                setWorkPlanTab("calendar");
-                setWorkPlanIsExportMode(false);
-              } else {
-                setWorkPlanTab("dashboard");
-                setWorkPlanIsExportMode(false);
-              }
-            }}
-            title="ចុចដើម្បីបើក/បិទ Dashboard ស្ថិតិ (Toggle Dashboard)"
-            className={`flex items-center gap-2.5 shrink-0 group cursor-pointer rounded-xl px-2 py-1 transition-all ${
-              workPlanTab === "dashboard"
-                ? "bg-blue-600/10 border border-blue-500/20"
-                : "hover:bg-white/[0.04] border border-transparent"
-            }`}
-          >
-            <span className={`p-2 rounded-xl border shadow-sm flex items-center justify-center transition-all ${
-              workPlanTab === "dashboard"
-                ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
-                : theme === "light" ? "bg-slate-200/80 border-slate-300 text-slate-800" : "bg-blue-600/10 border-blue-500/15 text-blue-400"
-            }`}>
-              <Calendar className="w-5 h-5" />
-            </span>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <h1 className={`text-base font-bold font-display tracking-tight ${
-                  workPlanTab === "dashboard" ? "text-blue-400" : theme === "light" ? "text-slate-900" : "text-white"
-                }`}>
-                  គ្រប់គ្រងផែនការការងារ
-                </h1>
-                {workPlanTab === "dashboard" && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 font-mono font-bold">Dashboard</span>
-                )}
-              </div>
-              <p className={`text-[10px] font-sans ${theme === "light" ? "text-slate-500" : "text-slate-400"}`}>កាលវិភាគផែនការការងារប្រចាំសប្តាហ៍ & ប្រចាំខែ</p>
-            </div>
-          </button>
-
-          {/* CENTER TOPBAR TAB MENU NAVIGATION */}
-          {activeTab === "workplan" && (
-            <nav className={`flex items-center gap-1 p-1 rounded-xl shadow-inner overflow-x-auto custom-scrollbar my-1 xl:my-0 ${theme === 'light' ? 'bg-slate-100 border border-slate-200' : 'bg-[#16161a] border border-white/[0.08]'}`}>
-              <button
-                type="button"
-                onClick={() => {
+          {/* MAIN TOP BAR (Single row on desktop & mobile) */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            
+            {/* Brand Logo - Click to toggle Dashboard */}
+            <button
+              type="button"
+              onClick={() => {
+                if (workPlanTab === "dashboard") {
                   setWorkPlanTab("calendar");
                   setWorkPlanIsExportMode(false);
-                }}
-                className={`text-xs px-3.5 py-1.5 rounded-lg font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                  workPlanTab === "calendar" && !workPlanIsExportMode
-                    ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white shadow-md shadow-sky-500/25"
-                    : "text-slate-400 hover:text-sky-300 hover:bg-sky-500/[0.06]"
-                }`}
-              >
-                <Calendar className={`w-3.5 h-3.5 ${workPlanTab === "calendar" && !workPlanIsExportMode ? "text-white" : "text-sky-400"}`} />
-                <span>ប្រតិទិនសប្តាហ៍</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                  workPlanTab === "calendar" && !workPlanIsExportMode ? "bg-white/20 text-white" : "bg-sky-500/10 text-sky-400"
-                }`}>
-                  {workPlanCounts.week}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setWorkPlanTab("month-calendar");
+                } else {
+                  setWorkPlanTab("dashboard");
                   setWorkPlanIsExportMode(false);
-                }}
-                className={`text-xs px-3.5 py-1.5 rounded-lg font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                  workPlanTab === "month-calendar" && !workPlanIsExportMode
-                    ? "bg-gradient-to-r from-cyan-600 to-teal-600 text-white shadow-md shadow-cyan-500/25"
-                    : "text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/[0.06]"
-                }`}
-              >
-                <Clock className={`w-3.5 h-3.5 ${workPlanTab === "month-calendar" && !workPlanIsExportMode ? "text-white" : "text-cyan-400"}`} />
-                <span>ប្រតិទិនខែ</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                  workPlanTab === "month-calendar" && !workPlanIsExportMode ? "bg-white/20 text-white" : "bg-cyan-500/10 text-cyan-400"
+                }
+              }}
+              title="ចុចដើម្បីបើក/បិទ Dashboard ស្ថិតិ (Toggle Dashboard)"
+              className={`flex items-center gap-2 sm:gap-2.5 shrink-0 group cursor-pointer rounded-xl px-1.5 py-1 transition-all ${
+                workPlanTab === "dashboard"
+                  ? "bg-blue-600/10 border border-blue-500/20"
+                  : "hover:bg-white/[0.04] border border-transparent"
+              }`}
+            >
+              <span className={`p-1.5 sm:p-2 rounded-xl border shadow-sm flex items-center justify-center transition-all ${
+                workPlanTab === "dashboard"
+                  ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
+                  : theme === "light" ? "bg-slate-200/80 border-slate-300 text-slate-800" : "bg-blue-600/10 border-blue-500/15 text-blue-400"
+              }`}>
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+              </span>
+              <div className="text-left">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h1 className={`text-xs sm:text-sm md:text-base font-bold font-display tracking-tight leading-tight ${
+                    workPlanTab === "dashboard" ? "text-blue-400" : theme === "light" ? "text-slate-900" : "text-white"
+                  }`}>
+                    គ្រប់គ្រងផែនការការងារ
+                  </h1>
+                  {workPlanTab === "dashboard" && (
+                    <span className="text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 font-mono font-bold shrink-0">
+                      Dashboard
+                    </span>
+                  )}
+                </div>
+                <p className={`text-[9px] sm:text-[10px] font-sans line-clamp-1 hidden sm:block ${
+                  theme === "light" ? "text-slate-500" : "text-slate-400"
                 }`}>
-                  {workPlanCounts.month}
-                </span>
-              </button>
+                  កាលវិភាគផែនការការងារប្រចាំសប្តាហ៍ & ប្រចាំខែ
+                </p>
+              </div>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setWorkPlanTab("datagrid");
-                  setWorkPlanIsExportMode(false);
-                }}
-                className={`text-xs px-3.5 py-1.5 rounded-lg font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                  workPlanTab === "datagrid" && !workPlanIsExportMode
-                    ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-md shadow-emerald-500/25"
-                    : "text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/[0.06]"
-                }`}
-              >
-                <Table className={`w-3.5 h-3.5 ${workPlanTab === "datagrid" && !workPlanIsExportMode ? "text-white" : "text-emerald-400"}`} />
-                <span>តារាងទិន្នន័យ DataGrid</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setWorkPlanTab("manager");
-                  setWorkPlanIsExportMode(false);
-                }}
-                className={`text-xs px-3.5 py-1.5 rounded-lg font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                  workPlanTab === "manager" && !workPlanIsExportMode
-                    ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-500/25"
-                    : "text-slate-400 hover:text-violet-300 hover:bg-violet-500/[0.06]"
-                }`}
-              >
-                <Globe className={`w-3.5 h-3.5 ${workPlanTab === "manager" && !workPlanIsExportMode ? "text-white" : "text-violet-400"}`} />
-                <span>Pages &amp; Platforms</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                  workPlanTab === "manager" && !workPlanIsExportMode ? "bg-white/20 text-white" : "bg-violet-500/10 text-violet-400"
-                }`}>
-                  {workPlanCounts.pages}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setWorkPlanTab("report");
-                  setWorkPlanIsExportMode(true);
-                }}
-                className={`text-xs px-3.5 py-1.5 rounded-lg font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
-                  workPlanIsExportMode || workPlanTab === "report"
-                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25"
-                    : "text-slate-400 hover:text-amber-300 hover:bg-amber-500/[0.06]"
-                }`}
-              >
-                <Printer className={`w-3.5 h-3.5 ${workPlanIsExportMode || workPlanTab === "report" ? "text-white" : "text-amber-400"}`} />
-                <span>Export Report</span>
-              </button>
-            </nav>
-          )}
-
-          {/* Right: WorkPlan Actions, Theme & Profile Actions */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {/* WorkPlan Active Month Selector & Primary Action Buttons */}
+            {/* CENTER TOPBAR TAB MENU NAVIGATION - DESKTOP VIEW (Visible on xl screens >= 1280px) */}
             {activeTab === "workplan" && (
-              <div className="flex items-center gap-2">
-                {/* Month Dropdown Selector Popover */}
-                {workPlanMonths.length > 0 && (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer font-sans shadow-sm ${theme === 'light' ? 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800' : 'bg-[#16161a] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200'}`}
-                    >
-                      <Calendar className="w-3.5 h-3.5 text-blue-400" />
-                      <span>ជ្រើសរើសខែ</span>
-                      <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isMonthDropdownOpen ? "rotate-180" : ""}`} />
-                    </button>
+              <nav className="hidden xl:flex items-center p-[2px] rounded-2xl animate-gemini-border shadow-xl shadow-cyan-500/20 transition-all">
+                <div className={`flex items-center gap-1.5 p-1.5 rounded-[14px] w-full h-full transition-all ${
+                  theme === 'light'
+                    ? 'bg-[#f0f7ff]'
+                    : 'bg-[#141d33]'
+                }`}>
+                  {/* 1. Week Calendar */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkPlanTab("calendar");
+                      setWorkPlanIsExportMode(false);
+                    }}
+                    className={`text-xs px-3.5 py-1.5 rounded-xl font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap border ${
+                      workPlanTab === "calendar" && !workPlanIsExportMode
+                        ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-300 shadow-md shadow-sky-500/40 font-black"
+                        : theme === 'light'
+                        ? "bg-white border-slate-300 text-slate-800 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 shadow-xs"
+                        : "bg-[#0f172a] border-blue-500/25 text-slate-200 hover:text-white hover:bg-sky-500/25 hover:border-sky-400/50"
+                    }`}
+                  >
+                    <Calendar className={`w-3.5 h-3.5 ${workPlanTab === "calendar" && !workPlanIsExportMode ? "text-white" : "text-sky-400"}`} />
+                    <span>ប្រតិទិនសប្តាហ៍</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      workPlanTab === "calendar" && !workPlanIsExportMode ? "bg-white/20 text-white" : "bg-sky-500/20 text-sky-300 border border-sky-500/30"
+                    }`}>
+                      {workPlanCounts.week}
+                    </span>
+                  </button>
 
-                    {/* Popover Menu displaying detailed month list */}
-                    {isMonthDropdownOpen && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-40" 
-                          onClick={() => setIsMonthDropdownOpen(false)} 
-                        />
-                        <div className={`absolute right-0 mt-2 w-64 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 font-sans ${theme === 'light' ? 'bg-white border border-slate-200 shadow-slate-200/60' : 'bg-[#111115] border border-white/[0.12]'}`}>
-                          <div className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center justify-between ${theme === 'light' ? 'text-slate-500 border-b border-slate-100' : 'text-slate-400 border-b border-white/[0.06]'}`}>
-                            <span>បញ្ជីខែផែនការ</span>
-                            <span className="text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
-                              {workPlanMonths.find(m => m.id === workPlanSelectedMonthId)?.nameKh || "ជ្រើសរើស"}
-                            </span>
+                  {/* 2. Month Calendar */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkPlanTab("month-calendar");
+                      setWorkPlanIsExportMode(false);
+                    }}
+                    className={`text-xs px-3.5 py-1.5 rounded-xl font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap border ${
+                      workPlanTab === "month-calendar" && !workPlanIsExportMode
+                        ? "bg-gradient-to-r from-cyan-600 to-teal-600 text-white border-cyan-300 shadow-md shadow-cyan-500/40 font-black"
+                        : theme === 'light'
+                        ? "bg-white border-slate-300 text-slate-800 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 shadow-xs"
+                        : "bg-[#0f172a] border-cyan-500/25 text-slate-200 hover:text-white hover:bg-cyan-500/25 hover:border-cyan-400/50"
+                    }`}
+                  >
+                    <Clock className={`w-3.5 h-3.5 ${workPlanTab === "month-calendar" && !workPlanIsExportMode ? "text-white" : "text-cyan-400"}`} />
+                    <span>ប្រតិទិនខែ</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      workPlanTab === "month-calendar" && !workPlanIsExportMode ? "bg-white/20 text-white" : "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                    }`}>
+                      {workPlanCounts.month}
+                    </span>
+                  </button>
+
+                  {/* 3. DataGrid */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkPlanTab("datagrid");
+                      setWorkPlanIsExportMode(false);
+                    }}
+                    className={`text-xs px-3.5 py-1.5 rounded-xl font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap border ${
+                      workPlanTab === "datagrid" && !workPlanIsExportMode
+                        ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white border-emerald-300 shadow-md shadow-emerald-500/40 font-black"
+                        : theme === 'light'
+                        ? "bg-white border-slate-300 text-slate-800 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 shadow-xs"
+                        : "bg-[#0f172a] border-emerald-500/25 text-slate-200 hover:text-white hover:bg-emerald-500/25 hover:border-emerald-400/50"
+                    }`}
+                  >
+                    <Table className={`w-3.5 h-3.5 ${workPlanTab === "datagrid" && !workPlanIsExportMode ? "text-white" : "text-emerald-400"}`} />
+                    <span>តារាងទិន្នន័យ DataGrid</span>
+                  </button>
+
+                  {/* 4. Pages & Platforms */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkPlanTab("manager");
+                      setWorkPlanIsExportMode(false);
+                    }}
+                    className={`text-xs px-3.5 py-1.5 rounded-xl font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap border ${
+                      workPlanTab === "manager" && !workPlanIsExportMode
+                        ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-violet-300 shadow-md shadow-violet-500/40 font-black"
+                        : theme === 'light'
+                        ? "bg-white border-slate-300 text-slate-800 hover:bg-violet-50 hover:text-violet-700 hover:border-violet-300 shadow-xs"
+                        : "bg-[#0f172a] border-violet-500/25 text-slate-200 hover:text-white hover:bg-violet-500/25 hover:border-violet-400/50"
+                    }`}
+                  >
+                    <Globe className={`w-3.5 h-3.5 ${workPlanTab === "manager" && !workPlanIsExportMode ? "text-white" : "text-violet-400"}`} />
+                    <span>Pages &amp; Platforms</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                      workPlanTab === "manager" && !workPlanIsExportMode ? "bg-white/20 text-white" : "bg-violet-500/20 text-violet-300 border border-violet-500/30"
+                    }`}>
+                      {workPlanCounts.pages}
+                    </span>
+                  </button>
+
+                  {/* 5. Export Report */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setWorkPlanTab("report");
+                      setWorkPlanIsExportMode(true);
+                    }}
+                    className={`text-xs px-3.5 py-1.5 rounded-xl font-bold font-sans transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap border ${
+                      workPlanIsExportMode || workPlanTab === "report"
+                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-amber-300 shadow-md shadow-orange-500/40 font-black"
+                        : theme === 'light'
+                        ? "bg-amber-500/15 border border-amber-500/40 text-amber-900 hover:bg-amber-500/25 shadow-xs"
+                        : "bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:bg-amber-500/30"
+                    }`}
+                  >
+                    <Printer className={`w-3.5 h-3.5 ${workPlanIsExportMode || workPlanTab === "report" ? "text-white" : "text-amber-400"}`} />
+                    <span>Export Report</span>
+                  </button>
+                </div>
+              </nav>
+            )}
+
+            {/* Right: Actions & Profile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* DESKTOP ONLY: Month Selector & Create Month Button */}
+              {activeTab === "workplan" && (
+                <div className="hidden xl:flex items-center gap-2">
+                  {/* Month Dropdown Selector Popover */}
+                  {workPlanMonths.length > 0 && (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer font-sans shadow-sm ${theme === 'light' ? 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800' : 'bg-[#16161a] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200'}`}
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                        <span>ជ្រើសរើសខែ</span>
+                        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isMonthDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Popover Menu displaying detailed month list */}
+                      {isMonthDropdownOpen && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setIsMonthDropdownOpen(false)} 
+                          />
+                          <div className={`absolute right-0 mt-2 w-64 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100 font-sans ${theme === 'light' ? 'bg-white border border-slate-200 shadow-slate-200/60' : 'bg-[#111115] border border-white/[0.12]'}`}>
+                            <div className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center justify-between ${theme === 'light' ? 'text-slate-500 border-b border-slate-100' : 'text-slate-400 border-b border-white/[0.06]'}`}>
+                              <span>បញ្ជីខែផែនការ</span>
+                              <span className="text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">
+                                {workPlanMonths.find(m => m.id === workPlanSelectedMonthId)?.nameKh || "ជ្រើសរើស"}
+                              </span>
+                            </div>
+                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                              {workPlanMonths.map(m => (
+                                <button
+                                  key={m.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setWorkPlanSelectedMonthId(m.id);
+                                    if (workPlanOnSelectMonthId) workPlanOnSelectMonthId(m.id);
+                                    setIsMonthDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                                    m.id === workPlanSelectedMonthId
+                                      ? "bg-blue-600/15 text-blue-600 border-l-2 border-blue-500 font-bold"
+                                      : theme === 'light' ? 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+                                  }`}
+                                >
+                                  <span>{m.nameKh} ({m.name})</span>
+                                  {m.id === workPlanSelectedMonthId && (
+                                    <Check className="w-3.5 h-3.5 text-blue-400" />
+                                  )}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                          <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                            {workPlanMonths.map(m => (
-                              <button
-                                key={m.id}
-                                type="button"
-                                onClick={() => {
-                                  setWorkPlanSelectedMonthId(m.id);
-                                  if (workPlanOnSelectMonthId) workPlanOnSelectMonthId(m.id);
-                                  setIsMonthDropdownOpen(false);
-                                }}
-                                className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                                  m.id === workPlanSelectedMonthId
-                                    ? "bg-blue-600/15 text-blue-600 border-l-2 border-blue-500 font-bold"
-                                    : theme === 'light' ? 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
-                                }`}
-                              >
-                                <span>{m.nameKh} ({m.name})</span>
-                                {m.id === workPlanSelectedMonthId && (
-                                  <Check className="w-3.5 h-3.5 text-blue-400" />
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+                        </>
+                      )}
+                    </div>
+                  )}
 
-                {/* Create Next Month Launcher - Grouped next to Month Selector */}
-                <button
-                  type="button"
-                  onClick={() => workPlanOnOpenCreateMonth && workPlanOnOpenCreateMonth()}
-                  className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-400 hover:text-amber-300 text-xs font-bold rounded-xl flex items-center gap-1 transition-all cursor-pointer font-sans whitespace-nowrap"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>បង្កើតខែបន្ទាប់</span>
-                </button>
+                  {/* Create Next Month Launcher */}
+                  <button
+                    type="button"
+                    onClick={() => workPlanOnOpenCreateMonth && workPlanOnOpenCreateMonth()}
+                    className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-400 hover:text-amber-300 text-xs font-bold rounded-xl flex items-center gap-1 transition-all cursor-pointer font-sans whitespace-nowrap"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>បង្កើតខែបន្ទាប់</span>
+                  </button>
+                </div>
+              )}
 
-                {/* Add New Post Modal Launcher */}
+              {/* Quick Add Post Button */}
+              {activeTab === "workplan" && (
                 <button
                   type="button"
                   onClick={() => workPlanOnOpenNewPost && workPlanOnOpenNewPost()}
-                  className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-md shadow-emerald-500/20 transition-all cursor-pointer font-sans active:scale-95 whitespace-nowrap"
+                  className="px-2.5 sm:px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-xl flex items-center gap-1 shadow-md shadow-emerald-500/20 transition-all cursor-pointer font-sans active:scale-95 whitespace-nowrap shrink-0"
+                  title="បន្ថែមផុសថ្មី"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
-                  <span>+ បន្ថែមផុសថ្មី</span>
+                  <span className="hidden sm:inline">+ បន្ថែមផុសថ្មី</span>
+                  <span className="sm:hidden font-bold">ផុសថ្មី</span>
                 </button>
-              </div>
-            )}
+              )}
 
-            {/* Theme Toggle Button */}
-            <button 
-              onClick={toggleTheme}
-              className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
-                theme === "light" ? "bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200" : "bg-[#16161a] border-white/[0.06] text-slate-200 hover:bg-white/10"
-              }`}
-              title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
-            >
-              {theme === "light" ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-blue-400" />}
-            </button>
+              {/* Theme Toggle Button */}
+              <button 
+                onClick={toggleTheme}
+                className={`p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                  theme === "light" ? "bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200" : "bg-[#16161a] border-white/[0.06] text-slate-200 hover:bg-white/10"
+                }`}
+                title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}
+              >
+                {theme === "light" ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-blue-400" />}
+              </button>
 
-            {/* Compact Avatar + Dropdown Menu */}
-            {firebaseUser && (
-              <div className="relative">
+              {/* Compact Avatar + Dropdown Menu */}
+              {firebaseUser && (
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowUserDropdown(prev => !prev)}
+                    className={`flex items-center gap-1.5 p-1 rounded-xl border transition-all cursor-pointer ${
+                      showUserDropdown
+                        ? "bg-blue-500/10 border-blue-500/20"
+                        : theme === 'light' ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'bg-[#16161a] border-white/[0.06] hover:bg-white/[0.06]'
+                    }`}
+                    title={(dbUser?.name) || firebaseUser.displayName || "User"}
+                  >
+                    <img
+                      src={(dbUser?.avatar) || firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent((dbUser?.name || "A"))}&background=1e40af&color=fff`}
+                      alt={(dbUser?.name) || "User"}
+                      className="w-7 h-7 object-cover rounded-lg border border-white/[0.08]"
+                    />
+                    <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserDropdown ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {showUserDropdown && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className={`absolute right-0 top-full mt-2 w-52 sm:w-56 max-w-[calc(100vw-2rem)] rounded-2xl shadow-2xl overflow-hidden z-50 ${theme === 'light' ? 'bg-white border border-slate-200 shadow-slate-200/60' : 'bg-[#111116] border border-white/[0.08]'}`}
+                        >
+                          {/* Header */}
+                           <div className={`px-4 py-3 flex items-center gap-3 ${theme === 'light' ? 'border-b border-slate-100' : 'border-b border-white/[0.06]'}`}>
+                            <img
+                              src={(dbUser?.avatar) || firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent((dbUser?.name || "A"))}&background=1e40af&color=fff`}
+                              alt={(dbUser?.name) || "User"}
+                              className="w-9 h-9 object-cover rounded-xl border border-white/[0.08]"
+                            />
+                            <div className="text-left overflow-hidden">
+                               <p className={`text-[11px] font-bold truncate font-display ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>{(dbUser?.name) || firebaseUser.displayName}</p>
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider text-blue-400 bg-blue-500/10">
+                                {dbUser?.role || "User"}
+                              </span>
+                            </div>
+                          </div>
+                          {/* Items */}
+                          <div className="py-1.5">
+                            <button
+                              type="button"
+                              onClick={() => { setActiveTab("profile"); setShowUserDropdown(false); }}
+                               className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold hover:bg-blue-500/[0.08] hover:text-blue-600 transition-all cursor-pointer font-sans ${theme === 'light' ? 'text-slate-700' : 'text-slate-300 hover:text-blue-300'}`}
+                            >
+                              <User className="w-4 h-4 text-blue-400" />
+                              <span>ព័ត៌មានគណនី (Profile)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setActiveTab("settings"); setShowUserDropdown(false); }}
+                               className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold hover:bg-violet-500/[0.08] hover:text-violet-600 transition-all cursor-pointer font-sans ${theme === 'light' ? 'text-slate-700' : 'text-slate-300 hover:text-violet-300'}`}
+                            >
+                              <Settings className="w-4 h-4 text-violet-400" />
+                              <span>ការកំណត់ប្រព័ន្ធ (Settings)</span>
+                            </button>
+                            <div className={`mx-3 my-1 border-t ${theme === 'light' ? 'border-slate-100' : 'border-white/[0.05]'}`} />
+                            <button
+                              type="button"
+                              onClick={() => { logoutFbAuth(); setShowUserDropdown(false); }}
+                               className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold hover:bg-rose-500/[0.08] hover:text-rose-600 transition-all cursor-pointer font-sans ${theme === 'light' ? 'text-slate-700' : 'text-slate-300 hover:text-rose-400'}`}
+                            >
+                              <LogOut className="w-4 h-4 text-rose-400" />
+                              <span>ចាកចេញ (Logout)</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* MOBILE MENU TOGGLE BUTTON (Visible on < xl screens) */}
+              {activeTab === "workplan" && (
                 <button
                   type="button"
-                  onClick={() => setShowUserDropdown(prev => !prev)}
-                  className={`flex items-center gap-1.5 p-1 rounded-xl border transition-all cursor-pointer ${
-                    showUserDropdown
-                      ? "bg-blue-500/10 border-blue-500/20"
-                      : theme === 'light' ? 'bg-slate-100 border-slate-200 hover:bg-slate-200' : 'bg-[#16161a] border-white/[0.06] hover:bg-white/[0.06]'
+                  onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                  className={`xl:hidden p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                    isMobileMenuOpen
+                      ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
+                      : theme === "light"
+                      ? "bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200"
+                      : "bg-[#16161a] border-white/[0.08] text-slate-300 hover:bg-white/10"
                   }`}
-                  title={(dbUser?.name) || firebaseUser.displayName || "User"}
+                  aria-label="Toggle Navigation Menu"
+                  title="បើក/បិទ ម៉ឺនុយ"
                 >
-                  <img
-                    src={(dbUser?.avatar) || firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent((dbUser?.name || "A"))}&background=1e40af&color=fff`}
-                    alt={(dbUser?.name) || "User"}
-                    className="w-7 h-7 object-cover rounded-lg border border-white/[0.08]"
-                  />
-                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showUserDropdown ? "rotate-180" : ""}`} />
+                  {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              )}
+
+            </div>
+          </div>
+
+          {/* MOBILE SCROLLABLE TAB STRIP (Visible on < xl screens when on workplan tab) */}
+          {activeTab === "workplan" && (
+            <div className="xl:hidden mt-2 p-[2px] rounded-2xl animate-gemini-border shadow-lg shadow-cyan-500/20 transition-all">
+              <div className={`flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth p-1.5 rounded-[14px] w-full py-1.5 pr-8 transition-all ${
+                theme === 'light'
+                  ? 'bg-[#f0f7ff]'
+                  : 'bg-[#141d33]'
+              }`}>
+                <button
+                  type="button"
+                  onClick={() => { setWorkPlanTab("calendar"); setWorkPlanIsExportMode(false); }}
+                  className={`text-[11px] px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border ${
+                    workPlanTab === "calendar" && !workPlanIsExportMode
+                      ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-300 shadow-md shadow-sky-500/25"
+                      : theme === 'light' ? 'bg-white border-slate-300 text-slate-800' : 'bg-[#0f172a] border-blue-500/25 text-slate-200 hover:text-white'
+                  }`}
+                >
+                  <Calendar className="w-3 h-3 text-sky-400" />
+                  <span>ប្រតិទិនសប្តាហ៍</span>
+                  <span className="text-[9px] px-1 py-0.1 rounded bg-sky-500/20 text-sky-300 font-mono">
+                    {workPlanCounts.week}
+                  </span>
                 </button>
 
-                {/* Dropdown */}
-                <AnimatePresence>
-                  {showUserDropdown && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
-                      <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className={`absolute right-0 top-full mt-2 w-52 rounded-2xl shadow-2xl overflow-hidden z-50 ${theme === 'light' ? 'bg-white border border-slate-200 shadow-slate-200/60' : 'bg-[#111116] border border-white/[0.08]'}`}
-                      >
-                        {/* Header */}
-                         <div className={`px-4 py-3 flex items-center gap-3 ${theme === 'light' ? 'border-b border-slate-100' : 'border-b border-white/[0.06]'}`}>
-                          <img
-                            src={(dbUser?.avatar) || firebaseUser.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent((dbUser?.name || "A"))}&background=1e40af&color=fff`}
-                            alt={(dbUser?.name) || "User"}
-                            className="w-9 h-9 object-cover rounded-xl border border-white/[0.08]"
-                          />
-                          <div className="text-left overflow-hidden">
-                             <p className={`text-[11px] font-bold truncate font-display ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>{(dbUser?.name) || firebaseUser.displayName}</p>
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider text-blue-400 bg-blue-500/10">
-                              {dbUser?.role || "User"}
-                            </span>
-                          </div>
-                        </div>
-                        {/* Items */}
-                        <div className="py-1.5">
-                          <button
-                            type="button"
-                            onClick={() => { setActiveTab("profile"); setShowUserDropdown(false); }}
-                             className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold hover:bg-blue-500/[0.08] hover:text-blue-600 transition-all cursor-pointer font-sans ${theme === 'light' ? 'text-slate-700' : 'text-slate-300 hover:text-blue-300'}`}
-                          >
-                            <User className="w-4 h-4 text-blue-400" />
-                            <span>ព័ត៌មានគណនី (Profile)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => { setActiveTab("settings"); setShowUserDropdown(false); }}
-                             className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold hover:bg-violet-500/[0.08] hover:text-violet-600 transition-all cursor-pointer font-sans ${theme === 'light' ? 'text-slate-700' : 'text-slate-300 hover:text-violet-300'}`}
-                          >
-                            <Settings className="w-4 h-4 text-violet-400" />
-                            <span>ការកំណត់ប្រព័ន្ធ (Settings)</span>
-                          </button>
-                          <div className={`mx-3 my-1 border-t ${theme === 'light' ? 'border-slate-100' : 'border-white/[0.05]'}`} />
-                          <button
-                            type="button"
-                            onClick={() => { logoutFbAuth(); setShowUserDropdown(false); }}
-                             className={`w-full px-4 py-2.5 flex items-center gap-3 text-xs font-semibold hover:bg-rose-500/[0.08] hover:text-rose-600 transition-all cursor-pointer font-sans ${theme === 'light' ? 'text-slate-700' : 'text-slate-300 hover:text-rose-400'}`}
-                          >
-                            <LogOut className="w-4 h-4 text-rose-400" />
-                            <span>ចាកចេញ (Logout)</span>
-                          </button>
-                        </div>
-                      </motion.div>
-                    </>
-                  )}
-                </AnimatePresence>
+                <button
+                  type="button"
+                  onClick={() => { setWorkPlanTab("month-calendar"); setWorkPlanIsExportMode(false); }}
+                  className={`text-[11px] px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border ${
+                    workPlanTab === "month-calendar" && !workPlanIsExportMode
+                      ? "bg-gradient-to-r from-cyan-600 to-teal-600 text-white border-cyan-300 shadow-md shadow-cyan-500/25"
+                      : theme === 'light' ? 'bg-white border-slate-300 text-slate-800' : 'bg-[#0f172a] border-cyan-500/25 text-slate-200 hover:text-white'
+                  }`}
+                >
+                  <Clock className="w-3 h-3 text-cyan-400" />
+                  <span>ប្រតិទិនខែ</span>
+                  <span className="text-[9px] px-1 py-0.1 rounded bg-cyan-500/20 text-cyan-300 font-mono">
+                    {workPlanCounts.month}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setWorkPlanTab("datagrid"); setWorkPlanIsExportMode(false); }}
+                  className={`text-[11px] px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border ${
+                    workPlanTab === "datagrid" && !workPlanIsExportMode
+                      ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white border-emerald-300 shadow-md shadow-emerald-500/25"
+                      : theme === 'light' ? 'bg-white border-slate-300 text-slate-800' : 'bg-[#0f172a] border-emerald-500/25 text-slate-200 hover:text-white'
+                  }`}
+                >
+                  <Table className="w-3 h-3 text-emerald-400" />
+                  <span>DataGrid</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setWorkPlanTab("manager"); setWorkPlanIsExportMode(false); }}
+                  className={`text-[11px] px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border ${
+                    workPlanTab === "manager" && !workPlanIsExportMode
+                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-violet-300 shadow-md shadow-violet-500/25"
+                      : theme === 'light' ? 'bg-white border-slate-300 text-slate-800' : 'bg-[#0f172a] border-violet-500/25 text-slate-200 hover:text-white'
+                  }`}
+                >
+                  <Globe className="w-3 h-3 text-violet-400" />
+                  <span>Pages ({workPlanCounts.pages})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { setWorkPlanTab("report"); setWorkPlanIsExportMode(true); }}
+                  className={`text-[11px] px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 border ${
+                    workPlanIsExportMode || workPlanTab === "report"
+                      ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-amber-300 shadow-md shadow-orange-500/25"
+                      : theme === 'light' ? 'bg-amber-500/15 border-amber-500/40 text-amber-900' : 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:text-amber-200'
+                  }`}
+                >
+                  <Printer className="w-3 h-3 text-amber-400" />
+                  <span>🖨️ របាយការណ៍ Print</span>
+                </button>
               </div>
+            </div>
+          )}
+
+          {/* MOBILE EXPANDABLE MENU DRAWER (When Hamburger is toggled) */}
+          <AnimatePresence>
+            {isMobileMenuOpen && activeTab === "workplan" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`xl:hidden overflow-hidden border-t mt-2.5 pt-3 pb-3 space-y-3.5 ${
+                  theme === 'light' ? 'border-slate-200 bg-slate-50/95 rounded-2xl p-3.5' : 'border-white/[0.08] bg-[#141419] rounded-2xl p-3.5 shadow-2xl'
+                }`}
+              >
+                {/* 1. Main Navigation Tabs & Print Menu */}
+                <div className="space-y-1.5">
+                  <label className={`text-[10px] font-bold uppercase tracking-wider ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+                    ម៉ឺនុយទិដ្ឋភាព &amp; របាយការណ៍ (Views &amp; Print Reports)
+                  </label>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {/* Week Calendar */}
+                    <button
+                      type="button"
+                      onClick={() => { setWorkPlanTab("calendar"); setWorkPlanIsExportMode(false); setIsMobileMenuOpen(false); }}
+                      className={`w-full px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between border ${
+                        workPlanTab === "calendar" && !workPlanIsExportMode
+                          ? "bg-gradient-to-r from-sky-600 to-blue-600 text-white border-sky-500/30 shadow-md shadow-sky-500/20"
+                          : theme === 'light' ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-[#1a1a20] border-white/[0.06] text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-sky-400" />
+                        <span>ប្រតិទិនសប្តាហ៍ (Weekly Calendar)</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-sky-500/20 text-sky-300">
+                        {workPlanCounts.week} Posts
+                      </span>
+                    </button>
+
+                    {/* Month Calendar */}
+                    <button
+                      type="button"
+                      onClick={() => { setWorkPlanTab("month-calendar"); setWorkPlanIsExportMode(false); setIsMobileMenuOpen(false); }}
+                      className={`w-full px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between border ${
+                        workPlanTab === "month-calendar" && !workPlanIsExportMode
+                          ? "bg-gradient-to-r from-cyan-600 to-teal-600 text-white border-cyan-500/30 shadow-md shadow-cyan-500/20"
+                          : theme === 'light' ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-[#1a1a20] border-white/[0.06] text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-cyan-400" />
+                        <span>ប្រតិទិនខែ (Monthly Calendar)</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-cyan-500/20 text-cyan-300">
+                        {workPlanCounts.month} Posts
+                      </span>
+                    </button>
+
+                    {/* DataGrid */}
+                    <button
+                      type="button"
+                      onClick={() => { setWorkPlanTab("datagrid"); setWorkPlanIsExportMode(false); setIsMobileMenuOpen(false); }}
+                      className={`w-full px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between border ${
+                        workPlanTab === "datagrid" && !workPlanIsExportMode
+                          ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white border-emerald-500/30 shadow-md shadow-emerald-500/20"
+                          : theme === 'light' ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-[#1a1a20] border-white/[0.06] text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Table className="w-4 h-4 text-emerald-400" />
+                        <span>តារាងទិន្នន័យ (DataGrid View)</span>
+                      </div>
+                    </button>
+
+                    {/* Pages & Platforms */}
+                    <button
+                      type="button"
+                      onClick={() => { setWorkPlanTab("manager"); setWorkPlanIsExportMode(false); setIsMobileMenuOpen(false); }}
+                      className={`w-full px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between border ${
+                        workPlanTab === "manager" && !workPlanIsExportMode
+                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-violet-500/30 shadow-md shadow-violet-500/20"
+                          : theme === 'light' ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100' : 'bg-[#1a1a20] border-white/[0.06] text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-violet-400" />
+                        <span>Pages &amp; Platforms</span>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-violet-500/20 text-violet-300">
+                        {workPlanCounts.pages} Pages
+                      </span>
+                    </button>
+
+                    {/* PROMINENT PRINT / EXPORT REPORT MENU TAB */}
+                    <button
+                      type="button"
+                      onClick={() => { setWorkPlanTab("report"); setWorkPlanIsExportMode(true); setIsMobileMenuOpen(false); }}
+                      className={`w-full px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between border ${
+                        workPlanIsExportMode || workPlanTab === "report"
+                          ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-amber-400/40 shadow-lg shadow-orange-500/30 font-black"
+                          : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Printer className="w-4 h-4 text-amber-400" />
+                        <span className="font-bold">🖨️ របាយការណ៍បោះពុម្ព (Export Report / Print)</span>
+                      </div>
+                      <span className="text-[9px] px-2 py-0.5 rounded uppercase font-bold tracking-wider bg-amber-400/20 text-amber-200 border border-amber-400/30 shrink-0">
+                        Print PDF
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Active Month Selection */}
+                {workPlanMonths.length > 0 && (
+                  <div className="space-y-1.5 pt-2 border-t border-white/[0.06]">
+                    <label className={`text-[10px] font-bold uppercase tracking-wider ${theme === 'light' ? 'text-slate-500' : 'text-slate-400'}`}>
+                      ជ្រើសរើសខែផែនការ (Select Active Month)
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto no-scrollbar">
+                      {workPlanMonths.map(m => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            setWorkPlanSelectedMonthId(m.id);
+                            if (workPlanOnSelectMonthId) workPlanOnSelectMonthId(m.id);
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold text-left flex items-center justify-between border transition-all ${
+                            m.id === workPlanSelectedMonthId
+                              ? "bg-blue-600/20 border-blue-500/40 text-blue-400 font-bold"
+                              : theme === 'light' ? 'bg-white border-slate-200 text-slate-700' : 'bg-[#1a1a20] border-white/[0.06] text-slate-300'
+                          }`}
+                        >
+                          <span className="truncate">{m.nameKh}</span>
+                          {m.id === workPlanSelectedMonthId && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Mobile Menu Action Launchers */}
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (workPlanOnOpenCreateMonth) workPlanOnOpenCreateMonth();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-400 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>បង្កើតខែបន្ទាប់</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (workPlanOnOpenNewPost) workPlanOnOpenNewPost();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    <span>+ បន្ថែមផុសថ្មី</span>
+                  </button>
+                </div>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
 
         </div>
       </header>

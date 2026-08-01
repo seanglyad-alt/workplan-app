@@ -146,3 +146,10 @@ export interface WorkPlanPlatform {
   isProtected?: boolean; // Demo platforms cannot be deleted or edited
 }
 
+export interface WorkPlanMonth {
+  id: string;
+  name: string;
+  nameKh: string;
+  status: "COMPLETED" | "IN_PROGRESS";
+}
+

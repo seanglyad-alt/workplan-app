@@ -2,17 +2,11 @@ services:
   - type: web
     name: seangly-workplan
     env: node
-    plan: starter
+    plan: free
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: file:/var/data/local.db
-    disk:
-      name: sqlite-data
-      mountPath: /var/data
-      sizeGB: 1
-# Render Deployment Config
-
+        value: file:local.db

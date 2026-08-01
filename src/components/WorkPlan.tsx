@@ -2547,7 +2547,7 @@ export default function WorkPlan({
                   </div>
 
                   {/* View modes Toggle */}
-                  <div className="flex gap-1 bg-[#16161a] p-0.5 border border-white/[0.06] rounded-lg">
+                  <div className="flex gap-1 bg-[#16161a] p-0.5 border border-white/[0.06] rounded-lg overflow-x-auto no-scrollbar flex-nowrap shrink-0">
                     {[
                       { key: "calendar", label: "មើលប្រតិទិន (Standard View)" },
                       { key: "month-calendar", label: "ប្រតិទិនប្រចាំខែ (Monthly View)" },
@@ -2558,7 +2558,7 @@ export default function WorkPlan({
                         key={tab.key}
                         type="button"
                         onClick={() => setSelectedTab(tab.key as any)}
-                        className={`text-[10px] px-2.5 py-1.5 rounded border transition-all cursor-pointer font-sans font-semibold ${
+                        className={`text-[10px] px-2.5 py-1.5 rounded border transition-all cursor-pointer font-sans font-semibold whitespace-nowrap shrink-0 ${
                           selectedTab === tab.key
                             ? "bg-violet-500/20 border-violet-500/30 text-violet-300 font-bold"
                             : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"

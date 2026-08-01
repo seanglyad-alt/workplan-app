@@ -22,5 +22,19 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": [
+    "src/**/*",
+    "server.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/config/**/*",
+    "src/transform-file.ts",
+    "src/transform-file-browser.ts",
+    "src/transformation/**/*",
+    "src/methods/**/*",
+    "src/middleware/**/*",
+    "src/requests/**/*"
+  ]
 }

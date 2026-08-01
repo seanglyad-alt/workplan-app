@@ -43,6 +43,13 @@
 ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
   .only-print, .only-print-inline {
     display: none;
   }
@@ -60,6 +67,32 @@
   .text-surface-secondary {
     color: var(--text-secondary);
   }
+}
+
+@keyframes geminiGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gemini-border {
+  background: linear-gradient(
+    120deg,
+    #38bdf8,
+    #818cf8,
+    #c084fc,
+    #f472b6,
+    #fbbf24,
+    #38bdf8
+  );
+  background-size: 300% 300%;
+  animation: geminiGlow 6s ease-in-out infinite;
 }
 
 @media print {
