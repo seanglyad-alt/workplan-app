@@ -16,7 +16,7 @@ import { exec } from "child_process";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import { db, initDbSchema, closeDbClient } from "./src/db/index.ts";
+import { db, initDbSchema, closeDbClient, reinitDb } from "./src/db/index.ts";
 import { getBackupsDir, getDbPath } from "./src/utils/paths.ts";
 import { 
   users, videoPosts, comments, autoReplyRules, pageSettings, 
@@ -2455,9 +2455,12 @@ app.post("/api/backup/restore", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid backup file" });
     }
 
+    // Close old connection, replace file, then reinit fresh connection
     closeDbClient();
     fs.copyFileSync(filePath, getDbPath());
+    reinitDb();
     await initDbSchema();
+    console.log("[Restore] Database restored and reconnected successfully:", filename);
     res.json({ success: true, message: "Database restored successfully" });
   } catch (err: any) {
     console.error("Restore failed:", err);
@@ -2478,9 +2481,12 @@ app.post("/api/backup/upload-restore", requireAuth, async (req, res) => {
     const backupPath = path.join(backupsDir, safeFilename);
     fs.writeFileSync(backupPath, buffer);
 
+    // Close old connection, replace file, then reinit fresh connection
     closeDbClient();
     fs.copyFileSync(backupPath, getDbPath());
+    reinitDb();
     await initDbSchema();
+    console.log("[Restore] Database restored from upload and reconnected:", safeFilename);
     res.json({ success: true, message: "Database restored from uploaded file successfully" });
   } catch (err: any) {
     console.error("Upload restore failed:", err);

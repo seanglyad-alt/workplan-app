@@ -3,19 +3,48 @@ import { createClient } from '@libsql/client';
 import * as schema from './schema.ts';
 import { getDbPath } from '../utils/paths.ts';
 
-const dbFilePath = getDbPath();
-const dbUrl = process.env.DATABASE_URL || `file:${dbFilePath}`;
+function createDbConnection() {
+  const dbFilePath = getDbPath();
+  const dbUrl = process.env.DATABASE_URL || `file:${dbFilePath}`;
+  const newClient = createClient({ url: dbUrl });
+  const newDb = drizzle(newClient, { schema });
+  return { client: newClient, db: newDb };
+}
 
-export const client = createClient({
-  url: dbUrl,
+// Mutable references — updated by reinitDb() after restore
+let _conn = createDbConnection();
+
+// Proxy-based exports so all existing `db.` calls auto-use the latest connection
+export const db = new Proxy({} as typeof _conn.db, {
+  get(_target, prop: string) {
+    return (_conn.db as any)[prop];
+  }
 });
 
-export const db = drizzle(client, { schema });
+export const client = new Proxy({} as typeof _conn.client, {
+  get(_target, prop: string) {
+    return (_conn.client as any)[prop];
+  }
+});
 
+/** Call after replacing the database file to reconnect everything */
+export function reinitDb() {
+  try {
+    if (_conn.client && typeof (_conn.client as any).close === 'function') {
+      (_conn.client as any).close();
+    }
+  } catch (e) {
+    console.warn("Client close warning:", e);
+  }
+  _conn = createDbConnection();
+  console.log("[DB] Reinitialized database connection to:", getDbPath());
+}
+
+/** Alias for backward compat */
 export function closeDbClient() {
   try {
-    if (client && typeof (client as any).close === 'function') {
-      (client as any).close();
+    if (_conn.client && typeof (_conn.client as any).close === 'function') {
+      (_conn.client as any).close();
     }
   } catch (e) {
     console.warn("Client close error:", e);
@@ -36,15 +65,17 @@ export async function initDbSchema() {
     `CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), title TEXT NOT NULL, message TEXT NOT NULL, type TEXT, is_read INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`
   ];
 
+  // Use fresh client after reinit
+  const freshClient = _conn.client;
   for (const sqlStr of statements) {
     try {
-      await client.execute(sqlStr);
+      await freshClient.execute(sqlStr);
     } catch (e) {
       console.warn("Table init warning:", e);
     }
   }
 
-  // Ensure any columns missing in older restored database files are added safely
+  // Safe column migrations (ignore if already exists)
   const migrations = [
     `ALTER TABLE users ADD COLUMN permissions TEXT;`,
     `ALTER TABLE users ADD COLUMN sex TEXT;`,
@@ -62,8 +93,8 @@ export async function initDbSchema() {
 
   for (const m of migrations) {
     try {
-      await client.execute(m);
-    } catch (e) {
+      await freshClient.execute(m);
+    } catch (_e) {
       // Ignore duplicate column errors
     }
   }
