@@ -2390,7 +2390,7 @@ app.post("/api/backup/now", requireAuth, async (req: AuthRequest, res) => {
     const destPath = path.join(backupsDir, filename);
     
     // Copy active database
-    fs.copyFileSync("local.db", destPath);
+    fs.copyFileSync(getDbPath(), destPath);
     
     let telegramSent = false;
     let telegramError = null;
@@ -2650,7 +2650,7 @@ function startBackupScheduler() {
           const destPath = path.join(backupsDir, filename);
 
           // Copy active database
-          fs.copyFileSync("local.db", destPath);
+          fs.copyFileSync(getDbPath(), destPath);
           
           console.log(`[Backup Scheduler] Auto-backup file created: ${filename}`);
 
