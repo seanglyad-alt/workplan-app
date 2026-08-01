@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: workplan-scheduler-app
+    name: seangly-workplan
     env: node
     plan: starter
     buildCommand: npm install --include=dev && npm run build
