@@ -2443,7 +2443,7 @@ app.post("/api/backup/now", requireAuth, async (req: AuthRequest, res) => {
 });
 
 // 3. Restore backup
-app.post("/api/backup/restore", requireAuth, async (req, res) => {
+app.post("/api/backup/restore", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { filename } = req.body;
     if (!filename) return res.status(400).json({ error: "Filename is required" });
@@ -2460,6 +2460,31 @@ app.post("/api/backup/restore", requireAuth, async (req, res) => {
     fs.copyFileSync(filePath, getDbPath());
     reinitDb();
     await initDbSchema();
+
+    // Re-link current logged-in user: update their uid in the restored DB so session still works
+    try {
+      const currentUid = req.user?.uid;
+      const currentEmail = req.user?.email;
+      if (currentUid && currentEmail) {
+        // Find user in restored DB by email first
+        const matchByEmail = await db.select().from(users).where(eq(users.email, currentEmail)).limit(1);
+        if (matchByEmail.length > 0 && matchByEmail[0].uid !== currentUid) {
+          // Update uid to match current session token so queries work immediately
+          await db.update(users).set({ uid: currentUid }).where(eq(users.id, matchByEmail[0].id));
+          console.log("[Restore] Re-linked user uid for:", currentEmail);
+        } else if (matchByEmail.length === 0) {
+          // Try find any Admin user and re-link
+          const anyAdmin = await db.select().from(users).where(eq(users.role, "Admin")).limit(1);
+          if (anyAdmin.length > 0) {
+            await db.update(users).set({ uid: currentUid, email: currentEmail }).where(eq(users.id, anyAdmin[0].id));
+            console.log("[Restore] Re-linked admin user for new session:", currentEmail);
+          }
+        }
+      }
+    } catch (linkErr) {
+      console.warn("[Restore] Could not re-link user (non-fatal):", linkErr);
+    }
+
     console.log("[Restore] Database restored and reconnected successfully:", filename);
     res.json({ success: true, message: "Database restored successfully" });
   } catch (err: any) {
@@ -2469,7 +2494,7 @@ app.post("/api/backup/restore", requireAuth, async (req, res) => {
 });
 
 // 4. Upload & Restore backup
-app.post("/api/backup/upload-restore", requireAuth, async (req, res) => {
+app.post("/api/backup/upload-restore", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { fileData, filename } = req.body;
     if (!fileData) return res.status(400).json({ error: "File data is required" });
@@ -2486,6 +2511,28 @@ app.post("/api/backup/upload-restore", requireAuth, async (req, res) => {
     fs.copyFileSync(backupPath, getDbPath());
     reinitDb();
     await initDbSchema();
+
+    // Re-link current logged-in user after restore
+    try {
+      const currentUid = req.user?.uid;
+      const currentEmail = req.user?.email;
+      if (currentUid && currentEmail) {
+        const matchByEmail = await db.select().from(users).where(eq(users.email, currentEmail)).limit(1);
+        if (matchByEmail.length > 0 && matchByEmail[0].uid !== currentUid) {
+          await db.update(users).set({ uid: currentUid }).where(eq(users.id, matchByEmail[0].id));
+          console.log("[Restore] Re-linked user uid for:", currentEmail);
+        } else if (matchByEmail.length === 0) {
+          const anyAdmin = await db.select().from(users).where(eq(users.role, "Admin")).limit(1);
+          if (anyAdmin.length > 0) {
+            await db.update(users).set({ uid: currentUid, email: currentEmail }).where(eq(users.id, anyAdmin[0].id));
+            console.log("[Restore] Re-linked admin user for new session:", currentEmail);
+          }
+        }
+      }
+    } catch (linkErr) {
+      console.warn("[Restore] Could not re-link user (non-fatal):", linkErr);
+    }
+
     console.log("[Restore] Database restored from upload and reconnected:", safeFilename);
     res.json({ success: true, message: "Database restored from uploaded file successfully" });
   } catch (err: any) {
