@@ -20,7 +20,7 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
   if (response.status === 401) {
     console.warn("Unauthorized API call:", url);
-    const localToken = localStorage.getItem("app_token");
+    const localToken = sessionStorage.getItem("app_token");
     if (localToken && localToken !== "local_admin_token") {
       logout().catch(() => {});
     }

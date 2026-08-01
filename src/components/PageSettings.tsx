@@ -15,6 +15,7 @@ import BackupSettings from "./BackupSettings";
 interface PageSettingsProps {
   settings: PageSettingsType | null;
   roles: UserRole[];
+  currentUser?: UserRole | null;
   onSettingsSaved: (updated: Partial<PageSettingsType>) => Promise<void>;
   onRoleAdded: (role: Omit<UserRole, "id" | "avatar">) => Promise<void>;
   onRoleUpdated?: (roleId: string, role: Omit<UserRole, "id" | "avatar">) => Promise<void>;
@@ -33,6 +34,7 @@ interface PageSettingsProps {
 export default function PageSettings({
   settings,
   roles,
+  currentUser,
   onSettingsSaved,
   onRoleAdded,
   onRoleUpdated,
@@ -168,6 +170,23 @@ export default function PageSettings({
     }
   };
 
+  // Helper to identify Super Admin accounts / roles
+  const isSuperAdminRole = (r?: { role?: string; email?: string; name?: string } | null) => {
+    if (!r) return false;
+    const roleName = (r.role || "").toLowerCase();
+    const nameStr = (r.name || "").toLowerCase();
+    const emailStr = (r.email || "").toLowerCase();
+    return (
+      roleName === "admin" ||
+      roleName === "super admin" ||
+      nameStr.includes("super admin") ||
+      emailStr === "seanglyad@gmail.com" ||
+      emailStr === "admin@app.local"
+    );
+  };
+
+  const ALL_ADMIN_PERMISSIONS = ["publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics"];
+
   const openAddModal = () => {
     setModalMode("add");
     setEditRoleId(null);
@@ -181,6 +200,10 @@ export default function PageSettings({
   };
 
   const openEditModal = (roleUser: UserRole) => {
+    if (isSuperAdminRole(roleUser) && !isSuperAdminRole(currentUser)) {
+      alert("គណនី Super Admin អាចកែប្រែបានតែដោយ Super Admin ផ្ទាល់ប៉ុណ្ណោះ! (Only Super Admin can edit Super Admin account)");
+      return;
+    }
     setModalMode("edit");
     setEditRoleId(roleUser.id);
     setFormName(roleUser.name);
@@ -188,14 +211,14 @@ export default function PageSettings({
     setFormPassword("");
     setFormRole(roleUser.role);
     setFormDepartment(roleUser.department || "");
-    // Use fallback if permissions don't exist
-    if (roleUser.permissions && roleUser.permissions.length > 0) {
+    
+    if (isSuperAdminRole(roleUser) || roleUser.role === "Admin") {
+      setFormPermissions(ALL_ADMIN_PERMISSIONS);
+    } else if (roleUser.permissions && roleUser.permissions.length > 0) {
       setFormPermissions(roleUser.permissions);
     } else {
       // Default fallback according to roles
-      if (roleUser.role === "Admin") {
-        setFormPermissions(["publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics"]);
-      } else if (roleUser.role === "Editor") {
+      if (roleUser.role === "Editor") {
         setFormPermissions(["publish_posts", "view_analytics"]);
       } else if (roleUser.role === "Moderator") {
         setFormPermissions(["auto_replies", "delete_content"]);
@@ -209,7 +232,7 @@ export default function PageSettings({
   const handleRoleSelectChange = (roleVal: "Admin" | "Editor" | "Moderator" | "Analyst") => {
     setFormRole(roleVal);
     if (roleVal === "Admin") {
-      setFormPermissions(["publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics"]);
+      setFormPermissions(ALL_ADMIN_PERMISSIONS);
     } else if (roleVal === "Editor") {
       setFormPermissions(["publish_posts", "view_analytics"]);
     } else if (roleVal === "Moderator") {
@@ -220,6 +243,9 @@ export default function PageSettings({
   };
 
   const togglePermission = (permKey: string) => {
+    if (formRole === "Admin" || isSuperAdminRole({ role: formRole, email: formEmail, name: formName })) {
+      return; // Cannot uncheck permissions for Super Admin / Admin
+    }
     if (formPermissions.includes(permKey)) {
       setFormPermissions(formPermissions.filter(p => p !== permKey));
     } else {
@@ -943,21 +969,25 @@ export default function PageSettings({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => onViewProfile(role.id)}
-                      className="p-2 bg-white/[0.03] hover:bg-white/[0.06] text-slate-400 hover:text-white rounded-xl border border-white/[0.06] transition-all cursor-pointer"
-                      title="មើលគណនី (View Profile)"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => openEditModal(role)}
-                      className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20 transition-all cursor-pointer"
-                      title="កែសម្រួល (Edit Profile)"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    {role.email !== "seanglyad@gmail.com" && (
+                    {(!isSuperAdminRole(role) || isSuperAdminRole(currentUser)) && (
+                      <button 
+                        onClick={() => onViewProfile(role.id)}
+                        className="p-2 bg-white/[0.03] hover:bg-white/[0.06] text-slate-400 hover:text-white rounded-xl border border-white/[0.06] transition-all cursor-pointer"
+                        title="មើលគណនី (View Profile)"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    )}
+                    {(!isSuperAdminRole(role) || isSuperAdminRole(currentUser)) && (
+                      <button 
+                        onClick={() => openEditModal(role)}
+                        className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20 transition-all cursor-pointer"
+                        title="កែសម្រួល (Edit Profile)"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {!isSuperAdminRole(role) && (
                       <button 
                         onClick={() => onRoleDeleted(role.id)}
                         className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl border border-red-500/20 transition-all cursor-pointer"
@@ -1032,7 +1062,7 @@ export default function PageSettings({
                   <input
                     type="email"
                     required
-                    disabled={modalMode === "edit" && formEmail === "seanglyad@gmail.com"}
+                    disabled={modalMode === "edit" && isSuperAdminRole({ role: formRole, email: formEmail, name: formName })}
                     value={formEmail}
                     onChange={(e) => setFormEmail(e.target.value)}
                     placeholder="e.g. vibol@company.kh"
@@ -1077,7 +1107,7 @@ export default function PageSettings({
                   </label>
                   <select
                     value={formRole}
-                    disabled={modalMode === "edit" && formEmail === "seanglyad@gmail.com"}
+                    disabled={modalMode === "edit" && isSuperAdminRole({ role: formRole, email: formEmail, name: formName })}
                     onChange={(e) => handleRoleSelectChange(e.target.value as any)}
                     className="w-full px-3 py-2 text-xs bg-white dark:bg-[#16161a] border border-white/[0.06] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-all font-sans"
                   >
@@ -1090,9 +1120,16 @@ export default function PageSettings({
 
                 {/* Dedicated checkable permission lists */}
                 <div className="space-y-2 text-left">
-                  <label className="text-[11px] font-semibold text-slate-400 block font-sans">
-                    ការអនុញ្ញាតជាក់លាក់របស់ក្រុមការងារ (Fine-grained Team Permissions Assignment)
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-semibold text-slate-400 block font-sans">
+                      ការអនុញ្ញាតជាក់លាក់របស់ក្រុមការងារ (Fine-grained Team Permissions Assignment)
+                    </label>
+                    {(formRole === "Admin" || isSuperAdminRole({ role: formRole, email: formEmail, name: formName })) && (
+                      <span className="text-[10px] text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                        🔒 Full Permissions (Locked)
+                      </span>
+                    )}
+                  </div>
                   
                   <div className="bg-white dark:bg-[#16161a] text-xs divide-y divide-slate-200/80 dark:divide-white/[0.03] rounded-xl border border-slate-200/70 dark:border-white/[0.06] max-h-56 overflow-y-auto">
                     {[
@@ -1102,16 +1139,17 @@ export default function PageSettings({
                       { key: "view_analytics", name: "📊 វិភាគរបាយការណ៍ស្ថិតិទិន្នន័យ", desc: "វិភាគយុទ្ធសាស្ត្រការផ្សាយ និងយោបល់ទូទៅ" },
                       { key: "delete_content", name: "🗑️ លុបមតិយោបល់ និងមាតិកា", desc: "លុបវីដេអូរលក ឬសម្រាំងមតិអវិជ្ជមាន" }
                     ].map(perm => {
-                      const isChecked = formPermissions.includes(perm.key);
+                      const isLockedAdmin = formRole === "Admin" || isSuperAdminRole({ role: formRole, email: formEmail, name: formName });
+                      const isChecked = isLockedAdmin || formPermissions.includes(perm.key);
                       return (
                         <div 
                           key={perm.key} 
                           onClick={() => {
-                            if (modalMode === "edit" && formEmail === "seanglyad@gmail.com") return; // Admin owner is always complete
+                            if (isLockedAdmin) return;
                             togglePermission(perm.key);
                           }}
                           className={`p-3 flex items-start gap-3 transition-colors cursor-pointer hover:bg-white/[0.02] ${
-                            modalMode === "edit" && formEmail === "seanglyad@gmail.com" ? "cursor-not-allowed opacity-80" : ""
+                            isLockedAdmin ? "cursor-not-allowed opacity-90 bg-blue-500/[0.02]" : ""
                           }`}
                         >
                           <div className="pt-0.5 shrink-0">

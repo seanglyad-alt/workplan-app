@@ -186,30 +186,58 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
   useEffect(() => { loadUsers(); loadBackups(); loadNotifs(); }, []);
 
   /* ── User CRUD ──────────────────────────────── */
+  const isSuperAdminUser = (u: any) => {
+    if (!u) return false;
+    const r = (u.role || "").toLowerCase();
+    const n = (u.name || "").toLowerCase();
+    const e = (u.email || "").toLowerCase();
+    return (
+      r === "admin" ||
+      r === "super admin" ||
+      n.includes("super admin") ||
+      e === "admin@app.local" ||
+      e === "seanglyad@gmail.com"
+    );
+  };
+
   const openCreate = () => {
     setEditing(null); setFName(""); setFEmail(""); setFRole("Editor");
     setFDept(""); setFPhone(""); setFPwd(""); setFConfirmPwd(""); setShowForm(true);
   };
   const openEdit = (u: any) => {
+    if (isSuperAdminUser(u) && !isSuperAdminUser(currentUser)) {
+      toast(false, "❌ គណនី Super Admin អាចកែប្រែបានតែដោយ Super Admin ផ្ទាល់ប៉ុណ្ណោះ!");
+      return;
+    }
     setEditing(u); setFName(u.name || ""); setFEmail(u.email || "");
     setFRole(u.role || "Editor"); setFDept(u.department || "");
     setFPhone(u.phoneNumber || ""); setFPwd(""); setFConfirmPwd(""); setShowForm(true);
   };
   const openAssignPerms = (u: any) => {
+    if (isSuperAdminUser(u) && !isSuperAdminUser(currentUser)) {
+      toast(false, "❌ គណនី Super Admin អាចកំណត់សិទ្ធិបានតែដោយ Super Admin ផ្ទាល់ប៉ុណ្ណោះ!");
+      return;
+    }
     setPermUser(u);
-    const existing = Array.isArray(u.permissions) && u.permissions.length > 0
-      ? u.permissions
-      : (DEFAULT_ROLE_PERMISSIONS[u.role] || DEFAULT_ROLE_PERMISSIONS.Editor);
-    setUserPerms(existing);
+    if (isSuperAdminUser(u) || u.role === "Admin") {
+      setUserPerms(SYSTEM_PERMISSIONS.map(p => p.key));
+    } else {
+      const existing = Array.isArray(u.permissions) && u.permissions.length > 0
+        ? u.permissions
+        : (DEFAULT_ROLE_PERMISSIONS[u.role] || DEFAULT_ROLE_PERMISSIONS.Editor);
+      setUserPerms(existing);
+    }
   };
 
   const handleSavePerms = async () => {
     if (!permUser) return;
     setSavingPerms(true);
     try {
+      const isSuper = isSuperAdminUser(permUser) || permUser.role === "Admin";
+      const finalPerms = isSuper ? SYSTEM_PERMISSIONS.map(p => p.key) : userPerms;
       const r = await fetchWithAuth(`/api/settings/roles/${permUser.id}`, {
         method: "PUT",
-        body: JSON.stringify({ permissions: userPerms })
+        body: JSON.stringify({ permissions: finalPerms })
       });
       if (!r.ok) throw new Error();
       toast(true, `✅ សិទ្ធិសម្រាប់ ${permUser.name} ត្រូវបានរក្សាទុក!`);
@@ -228,11 +256,15 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
     if (!editing && !fPwd.trim()) return toast(false, "ត្រូវបញ្ចូលពាក្យសម្ងាត់!");
     if (fPwd && fPwd !== fConfirmPwd) return toast(false, "❌ ពាក្យសម្ងាត់មិនត្រូវគ្នា! សូមបញ្ចូលម្ដងទៀត។");
     if (fPwd && fPwd.length < 6) return toast(false, "❌ ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច 6 តួអក្សរ!");
+
     setSaving(true);
     try {
-      const payload: any = {
+      const isSuper = fRole === "Admin" || fName.toLowerCase().includes("super admin") || fEmail === "admin@app.local" || fEmail === "seanglyad@gmail.com";
+      const payload: Record<string, any> = {
         name: fName, email: fEmail, role: fRole, department: fDept, phoneNumber: fPhone,
-        permissions: editing ? editing.permissions : (DEFAULT_ROLE_PERMISSIONS[fRole] || DEFAULT_ROLE_PERMISSIONS.Editor)
+        permissions: isSuper 
+          ? SYSTEM_PERMISSIONS.map(p => p.key)
+          : (editing ? editing.permissions : (DEFAULT_ROLE_PERMISSIONS[fRole] || DEFAULT_ROLE_PERMISSIONS.Editor))
       };
       if (fPwd) payload.password = fPwd;
       const url = editing ? `/api/settings/roles/${editing.id}` : "/api/settings/roles";
@@ -621,24 +653,30 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                                   }`}>
                                     {isFullAccess ? "Full Access" : `${userPermList.length}/${SYSTEM_PERMISSIONS.length} សិទ្ធិ`}
                                   </span>
-                                  <button type="button" onClick={() => openAssignPerms(u)}
-                                    className="px-2 py-0.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-[10px] font-semibold border border-white/[0.06] flex items-center gap-1 cursor-pointer transition-all">
-                                    <Sliders className="w-3 h-3 text-violet-400" />
-                                    <span>កំណត់សិទ្ធិ</span>
-                                  </button>
+                                  {(!isSuperAdminUser(u) || isSuperAdminUser(currentUser)) && (
+                                    <button type="button" onClick={() => openAssignPerms(u)}
+                                      className="px-2 py-0.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 text-[10px] font-semibold border border-white/[0.06] flex items-center gap-1 cursor-pointer transition-all">
+                                      <Sliders className="w-3 h-3 text-violet-400" />
+                                      <span>កំណត់សិទ្ធិ</span>
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-slate-500 text-[11px]">{u.department || "—"}</td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-1 justify-end">
-                                  <button type="button" onClick={() => openEdit(u)}
-                                    className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer" title="Edit Profile">
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button type="button" onClick={() => setConfirmDel(u)}
-                                    className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer" title="Delete User">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  {(!isSuperAdminUser(u) || isSuperAdminUser(currentUser)) && (
+                                    <button type="button" onClick={() => openEdit(u)}
+                                      className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer" title="Edit Profile">
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  {!isSuperAdminUser(u) && (
+                                    <button type="button" onClick={() => setConfirmDel(u)}
+                                      className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer" title="Delete User">
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </motion.tr>
@@ -1104,14 +1142,20 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {catPerms.map(p => {
-                          const isSelected = userPerms.includes(p.key);
+                          const isLockedAdmin = isSuperAdminUser(permUser) || permUser.role === "Admin";
+                          const isSelected = isLockedAdmin || userPerms.includes(p.key);
                           return (
                             <div key={p.key}
-                              onClick={() => setUserPerms(prev => isSelected ? prev.filter(k => k !== p.key) : [...prev, p.key])}
-                              className={`p-3 rounded-xl border flex items-start gap-3 cursor-pointer transition-all ${
-                                isSelected
-                                  ? "bg-violet-500/[0.08] border-violet-500/30 text-slate-200"
-                                  : "bg-[#16161b] border-white/[0.04] text-slate-400 hover:border-white/[0.1]"
+                              onClick={() => {
+                                if (isLockedAdmin) return;
+                                setUserPerms(prev => isSelected ? prev.filter(k => k !== p.key) : [...prev, p.key]);
+                              }}
+                              className={`p-3 rounded-xl border flex items-start gap-3 transition-all ${
+                                isLockedAdmin 
+                                  ? "cursor-not-allowed opacity-90 bg-violet-500/[0.04] border-violet-500/20 text-slate-200"
+                                  : isSelected
+                                    ? "bg-violet-500/[0.08] border-violet-500/30 text-slate-200 cursor-pointer"
+                                    : "bg-[#16161b] border-white/[0.04] text-slate-400 hover:border-white/[0.1] cursor-pointer"
                               }`}>
                               <div className={`w-4 h-4 rounded-md border flex items-center justify-center mt-0.5 shrink-0 ${
                                 isSelected ? "bg-violet-600 border-violet-500 text-white" : "border-white/20 bg-black/20"
@@ -1119,7 +1163,10 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                                 {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                               </div>
                               <div>
-                                <p className="text-xs font-semibold text-slate-200 leading-tight">{p.label}</p>
+                                <p className="text-xs font-semibold text-slate-200 leading-tight flex items-center gap-1.5">
+                                  <span>{p.label}</span>
+                                  {isLockedAdmin && <span className="text-[9px] text-violet-400 font-normal ml-1">(Locked)</span>}
+                                </p>
                                 <p className="text-[10px] text-slate-500 mt-0.5">{p.description}</p>
                               </div>
                             </div>

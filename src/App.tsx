@@ -690,9 +690,24 @@ export default function App() {
   };
 
   const handleRoleDeleted = async (roleId: string) => {
+    const targetRole = roles.find(r => r.id === roleId);
+    if (targetRole) {
+      const r = (targetRole.role || "").toLowerCase();
+      const n = (targetRole.name || "").toLowerCase();
+      const e = (targetRole.email || "").toLowerCase();
+      if (r === "admin" || r === "super admin" || n.includes("super admin") || e === "admin@app.local" || e === "seanglyad@gmail.com") {
+        alert("មិនអាចលុបគណនី Super Admin ឬ Admin បានទេ! (Super Admin cannot be deleted)");
+        return;
+      }
+    }
     try {
       setIsSyncing(true);
-      await fetchWithAuth(`/api/settings/roles/${roleId}`, { method: "DELETE" });
+      const res = await fetchWithAuth(`/api/settings/roles/${roleId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "បរាជ័យក្នុងការលុបបុគ្គលិក!");
+        return;
+      }
       setRoles(prev => prev.filter(r => r.id !== roleId));
     } catch (err) {
       console.error(err);

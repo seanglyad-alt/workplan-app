@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Ensure a valid-looking apiKey and authDomain exist in the config to prevent Firebase SDK from throwing on initialization
@@ -11,4 +11,5 @@ const config = {
 
 const app = initializeApp(config);
 export const auth = getAuth(app);
+setPersistence(auth, browserSessionPersistence).catch(() => {});
 export const googleAuthProvider = new GoogleAuthProvider();

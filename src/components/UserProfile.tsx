@@ -13,12 +13,30 @@ import { UserRole } from "../types";
 
 interface UserProfileProps {
   user: UserRole | null;
+  currentUser?: UserRole | null;
   onUpdateProfile: (userId: string, data: Partial<UserRole & { password?: string }>) => Promise<void>;
   onBack: () => void;
   isLoading: boolean;
 }
 
-export default function UserProfile({ user, onUpdateProfile, onBack, isLoading }: UserProfileProps) {
+export default function UserProfile({ user, currentUser, onUpdateProfile, onBack, isLoading }: UserProfileProps) {
+  const isSuperAdminUser = (u: any) => {
+    if (!u) return false;
+    const r = (u.role || "").toLowerCase();
+    const n = (u.name || "").toLowerCase();
+    const e = (u.email || "").toLowerCase();
+    return (
+      e === "admin@app.local" ||
+      e === "seanglyad@gmail.com" ||
+      n.includes("super admin") ||
+      r === "super admin"
+    );
+  };
+
+  const isTargetSuperAdmin = isSuperAdminUser(user);
+  const isCurrentSuperAdmin = isSuperAdminUser(currentUser);
+  const isRestricted = isTargetSuperAdmin && !isCurrentSuperAdmin;
+
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [role, setRole] = useState(user?.role || "Editor");
@@ -51,6 +69,11 @@ export default function UserProfile({ user, onUpdateProfile, onBack, isLoading }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isRestricted) {
+      alert("គណនី Super Admin អាចកែប្រែបានតែដោយ Super Admin ផ្ទាល់ប៉ុណ្ណោះ! (Only Super Admin can edit Super Admin profile)");
+      return;
+    }
     
     if (password && password !== confirmPassword) {
       setPasswordError("លេខសម្ងាត់មិនត្រូវគ្នា! (Passwords do not match)");

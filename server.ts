@@ -1603,6 +1603,26 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
     const { name, email, role, permissions, password, department } = req.body;
     if (!name || !email) return res.status(400).json({ error: "Name and email are required" });
 
+    const isSuperAdmin = 
+      role === "Admin" || 
+      role === "Super Admin" || 
+      name.toLowerCase().includes("super admin") || 
+      email === "admin@app.local" || 
+      email === "seanglyad@gmail.com";
+
+    const defaultFullPerms = [
+      "publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics",
+      "workplan:view", "workplan:create", "workplan:edit", "workplan:delete", "workplan:export",
+      "users:view", "users:create", "users:edit_role", "users:delete",
+      "backup:create", "backup:restore", "backup:delete",
+      "pages:manage", "comments:reply"
+    ];
+
+    let finalPermissions = permissions || [];
+    if (isSuperAdmin) {
+      finalPermissions = Array.from(new Set([...finalPermissions, ...defaultFullPerms]));
+    }
+
     let uid = "external_" + Date.now();
 
     // Create user in Firebase Auth if a password is provided
@@ -1616,7 +1636,6 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
         uid = fbUser.uid;
       } catch (fbErr: any) {
         console.warn("Firebase user creation failed, continuing with local DB only:", fbErr.message);
-        // We continue because the database insert will still allow login via our local mechanism
       }
     }
 
@@ -1627,7 +1646,7 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
       passwordHash: password, // Store password for local login mechanism
       role: role || "Editor",
       avatar: `https://images.unsplash.com/photo-${15000000000+Math.floor(Math.random()*999999999)}?auto=format&fit=crop&w=150&h=150&q=80`,
-      permissions: permissions || [],
+      permissions: finalPermissions,
       sex: req.body.sex,
       dob: req.body.dob,
       phoneNumber: req.body.phoneNumber,
@@ -1640,19 +1659,41 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
   }
 });
 
-app.put("/api/settings/roles/:id", requireAuth, async (req, res) => {
+app.put("/api/settings/roles/:id", requireAuth, async (req: any, res) => {
   try {
     const { name, email, role, permissions, sex, dob, phoneNumber, avatar, password, department } = req.body;
-    
+    const userId = parseInt(req.params.id);
+
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!userResult.length) return res.status(404).json({ error: "User role not found" });
+    const existingUser = userResult[0];
+
+    // Check if target or updated info represents Super Admin / Admin
+    const isTargetSuperAdmin = 
+      existingUser.role === "Admin" || 
+      existingUser.role === "Super Admin" || 
+      existingUser.name.toLowerCase().includes("super admin") || 
+      existingUser.email === "admin@app.local" || 
+      existingUser.email === "seanglyad@gmail.com";
+
+    const isReqSuperAdmin = req.user ? (
+      req.user.role === "Admin" || 
+      req.user.role === "Super Admin" || 
+      (req.user.name && req.user.name.toLowerCase().includes("super admin")) || 
+      req.user.email === "admin@app.local" || 
+      req.user.email === "seanglyad@gmail.com"
+    ) : false;
+
+    if (isTargetSuperAdmin && !isReqSuperAdmin) {
+      return res.status(403).json({ error: "Only Super Admin can edit or modify Super Admin account!" });
+    }
+
     // Optional: handle password update via Firebase
-    if (password) {
-      const userResult = await db.select().from(users).where(eq(users.id, parseInt(req.params.id))).limit(1);
-      if (userResult.length && !userResult[0].uid.startsWith("external_")) {
-        try {
-          await adminAuth.updateUser(userResult[0].uid, { password });
-        } catch (err) {
-          console.error("Firebase pwd update failed:", err);
-        }
+    if (password && !existingUser.uid.startsWith("external_")) {
+      try {
+        await adminAuth.updateUser(existingUser.uid, { password });
+      } catch (err) {
+        console.error("Firebase pwd update failed:", err);
       }
     }
 
@@ -1665,15 +1706,28 @@ app.put("/api/settings/roles/:id", requireAuth, async (req, res) => {
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
     if (avatar !== undefined) updateData.avatar = avatar;
     if (password !== undefined) updateData.passwordHash = password;
-    if (permissions !== undefined) updateData.permissions = permissions;
     if (department !== undefined) updateData.department = department;
+
+    if (permissions !== undefined || isTargetSuperAdmin) {
+      const defaultFullPerms = [
+        "publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics",
+        "workplan:view", "workplan:create", "workplan:edit", "workplan:delete", "workplan:export",
+        "users:view", "users:create", "users:edit_role", "users:delete",
+        "backup:create", "backup:restore", "backup:delete",
+        "pages:manage", "comments:reply"
+      ];
+      if (isTargetSuperAdmin) {
+        updateData.permissions = defaultFullPerms;
+      } else {
+        updateData.permissions = permissions;
+      }
+    }
 
     const result = await db.update(users)
       .set(updateData)
-      .where(eq(users.id, parseInt(req.params.id)))
+      .where(eq(users.id, userId))
       .returning();
     
-    if (!result.length) return res.status(404).json({ error: "User role not found" });
     res.json(result[0]);
   } catch (err: any) {
     console.error("Failed to update role:", err);
@@ -1683,9 +1737,22 @@ app.put("/api/settings/roles/:id", requireAuth, async (req, res) => {
 
 app.delete("/api/settings/roles/:id", requireAuth, async (req, res) => {
   try {
-    const userResult = await db.select().from(users).where(eq(users.id, parseInt(req.params.id))).limit(1);
+    const userId = parseInt(req.params.id);
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (userResult.length > 0) {
-      const uid = userResult[0].uid;
+      const targetUser = userResult[0];
+      const isSuperAdmin = 
+        targetUser.role === "Admin" || 
+        targetUser.role === "Super Admin" || 
+        targetUser.name.toLowerCase().includes("super admin") || 
+        targetUser.email === "admin@app.local" || 
+        targetUser.email === "seanglyad@gmail.com";
+
+      if (isSuperAdmin) {
+        return res.status(403).json({ error: "Super Admin or Admin role cannot be deleted!" });
+      }
+
+      const uid = targetUser.uid;
       try {
         if (!uid.startsWith("external_") && !uid.includes("role_user")) {
           await adminAuth.deleteUser(uid);
@@ -1694,7 +1761,7 @@ app.delete("/api/settings/roles/:id", requireAuth, async (req, res) => {
         console.warn("Could not delete from firebase:", err);
       }
     }
-    await db.delete(users).where(eq(users.id, parseInt(req.params.id)));
+    await db.delete(users).where(eq(users.id, userId));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete role" });

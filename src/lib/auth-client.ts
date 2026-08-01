@@ -12,10 +12,14 @@ import { auth, googleAuthProvider } from "./firebase.ts";
 let mockLocalUser: any = null;
 let authListeners: ((user: any) => void)[] = [];
 
-// Initialize simple local state if token exists
+// Initialize simple local state using sessionStorage (cleared when browser is closed)
 const initLocalAuth = () => {
-  const token = localStorage.getItem("app_token");
-  const userStr = localStorage.getItem("app_user");
+  // Clear legacy persistent localStorage auth items so closing browser always requires re-login
+  localStorage.removeItem("app_token");
+  localStorage.removeItem("app_user");
+
+  const token = sessionStorage.getItem("app_token");
+  const userStr = sessionStorage.getItem("app_user");
   if (token && userStr) {
     try {
       const parsed = JSON.parse(userStr);
@@ -80,14 +84,14 @@ export const loginWithEmail = async (email: string, password: string) => {
 
     if (!res.ok) throw new Error(data.error || "Login failed");
 
-    // Success login! We got a token from backend
-    localStorage.setItem("app_token", data.token);
+    // Success login! We store token in sessionStorage so closing browser requires re-login
+    sessionStorage.setItem("app_token", data.token);
     mockLocalUser = {
       ...data.user,
       displayName: data.user.name,
       photoURL: data.user.avatar
     };
-    localStorage.setItem("app_user", JSON.stringify(mockLocalUser));
+    sessionStorage.setItem("app_user", JSON.stringify(mockLocalUser));
     
     notifyListeners();
 
@@ -104,6 +108,8 @@ export const resetPassword = async (email: string) => {
 
 export const logout = async () => {
   try {
+    sessionStorage.removeItem("app_token");
+    sessionStorage.removeItem("app_user");
     localStorage.removeItem("app_token");
     localStorage.removeItem("app_user");
     mockLocalUser = null;
@@ -141,7 +147,7 @@ export const subscribeToAuthChanges = (callback: (user: User | null) => void) =>
 };
 
 export const getAuthToken = async () => {
-  const localToken = localStorage.getItem("app_token");
+  const localToken = sessionStorage.getItem("app_token");
   if (localToken) return localToken;
 
   const user = auth.currentUser;
@@ -157,7 +163,7 @@ export const updateLocalUser = (updatedUser: any) => {
       displayName: updatedUser.name || mockLocalUser.displayName,
       photoURL: updatedUser.avatar || mockLocalUser.photoURL
     };
-    localStorage.setItem("app_user", JSON.stringify(mockLocalUser));
+    sessionStorage.setItem("app_user", JSON.stringify(mockLocalUser));
     notifyListeners();
   }
 };
