@@ -1,0 +1,6 @@
+{
+  "name": "Facebook Video Scheduler & Analytics Dashboard",
+  "description": "A high-fidelity Facebook video power publisher, automated scheduler, real-time analytics tracker, and smart AI auto-reply system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

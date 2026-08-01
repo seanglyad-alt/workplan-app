@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@font-face {
+  font-family: 'Battambang';
+  src: url('../../assets/fonts/Battambang-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Battambang';
+  src: url('../../assets/fonts/Battambang-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Battambang", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Battambang", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-scheme-dark: dark;
+}
+
+@layer base {
+  html {
+    font-size: 115%;
+  }
+
+  :root {
+    color-scheme: dark;
+    --bg-body: #0a0a0b;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --surface: #111116;
+    --surface-strong: #0f172a;
+    --border-color: rgba(255,255,255,0.06);
+    --card: #111116;
+  }
+
+  body {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK MODE — 100% unchanged. Full vibrant dark theme.
+   LIGHT MODE overrides are injected dynamically by JavaScript in App.tsx
+   using [class*="..."] attribute selectors, which are guaranteed to match
+   regardless of Tailwind v4 JIT processing.
+═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  .only-print, .only-print-inline {
+    display: none;
+  }
+  .surface-card {
+    background-color: var(--surface);
+    color: var(--text-primary);
+  }
+  .surface-panel {
+    background-color: var(--surface-strong);
+    color: var(--text-primary);
+  }
+  .surface-border {
+    border-color: var(--border-color);
+  }
+  .text-surface-secondary {
+    color: var(--text-secondary);
+  }
+}
+
+@media print {
+  header, footer, nav, .print-hide, .no-print {
+    display: none !important;
+  }
+  .only-print {
+    display: block !important;
+  }
+  .only-print-inline {
+    display: inline-block !important;
+  }
+  body, main {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .max-w-\[1850px\] {
+    max-width: none !important;
+  }
+}
