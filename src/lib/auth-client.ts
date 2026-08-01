@@ -12,7 +12,7 @@ import { auth, googleAuthProvider } from "./firebase.ts";
 let mockLocalUser: any = null;
 let authListeners: ((user: any) => void)[] = [];
 
-// Initialize simple local state if token exists or auto-provision default admin for local dev
+// Initialize simple local state if token exists
 const initLocalAuth = () => {
   const token = localStorage.getItem("app_token");
   const userStr = localStorage.getItem("app_user");
@@ -27,20 +27,7 @@ const initLocalAuth = () => {
       return;
     } catch {}
   }
-
-  // Default fallback for instant local dev access
-  const defaultAdmin = {
-    id: 1,
-    uid: "local_admin_123",
-    email: "admin@app.local",
-    name: "Admin User",
-    role: "Admin",
-    displayName: "Admin User",
-    photoURL: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80"
-  };
-  localStorage.setItem("app_token", "local_admin_token");
-  localStorage.setItem("app_user", JSON.stringify(defaultAdmin));
-  mockLocalUser = defaultAdmin;
+  mockLocalUser = null;
 };
 initLocalAuth();
 
