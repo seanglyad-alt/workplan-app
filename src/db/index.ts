@@ -12,6 +12,16 @@ export const client = createClient({
 
 export const db = drizzle(client, { schema });
 
+export function closeDbClient() {
+  try {
+    if (client && typeof (client as any).close === 'function') {
+      (client as any).close();
+    }
+  } catch (e) {
+    console.warn("Client close error:", e);
+  }
+}
+
 export async function initDbSchema() {
   const statements = [
     `CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, name TEXT, avatar TEXT, password_hash TEXT, role TEXT DEFAULT 'Editor', permissions TEXT, sex TEXT, dob TEXT, phone_number TEXT, department TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`,
@@ -34,4 +44,3 @@ export async function initDbSchema() {
     }
   }
 }
-
