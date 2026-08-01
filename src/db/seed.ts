@@ -123,16 +123,12 @@ export async function seedDatabase() {
   ]);
 
   // 5. Seed Work Plan Data
-  await db.insert(workPlanPages).values([]);
-
   await db.insert(workPlanPlatforms).values([
     { id: "platform_1", name: "Facebook" },
     { id: "platform_2", name: "Instagram" },
     { id: "platform_3", name: "YouTube" },
     { id: "platform_4", name: "TikTok" }
   ]);
-
-  await db.insert(workPlanItems).values([]);
 
   await db.insert(monthlyPlans).values([
     { id: "2026-06", name: "June 2026", nameKh: "មិថុនា ២០២៦", status: "COMPLETED" },

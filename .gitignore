@@ -1,5 +1,8 @@
 node_modules/
 build/
+release/
+dist/
+local.db
 coverage/
 .DS_Store
 *.log

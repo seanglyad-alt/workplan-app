@@ -192,7 +192,6 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
     const n = (u.name || "").toLowerCase();
     const e = (u.email || "").toLowerCase();
     return (
-      r === "admin" ||
       r === "super admin" ||
       n.includes("super admin") ||
       e === "admin@app.local" ||
@@ -219,7 +218,7 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
       return;
     }
     setPermUser(u);
-    if (isSuperAdminUser(u) || u.role === "Admin") {
+    if (isSuperAdminUser(u)) {
       setUserPerms(SYSTEM_PERMISSIONS.map(p => p.key));
     } else {
       const existing = Array.isArray(u.permissions) && u.permissions.length > 0
@@ -233,7 +232,7 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
     if (!permUser) return;
     setSavingPerms(true);
     try {
-      const isSuper = isSuperAdminUser(permUser) || permUser.role === "Admin";
+      const isSuper = isSuperAdminUser(permUser);
       const finalPerms = isSuper ? SYSTEM_PERMISSIONS.map(p => p.key) : userPerms;
       const r = await fetchWithAuth(`/api/settings/roles/${permUser.id}`, {
         method: "PUT",
@@ -1142,7 +1141,7 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {catPerms.map(p => {
-                          const isLockedAdmin = isSuperAdminUser(permUser) || permUser.role === "Admin";
+                          const isLockedAdmin = isSuperAdminUser(permUser);
                           const isSelected = isLockedAdmin || userPerms.includes(p.key);
                           return (
                             <div key={p.key}

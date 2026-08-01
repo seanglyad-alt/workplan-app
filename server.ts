@@ -1,7 +1,13 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import diagnostics_channel from "node:diagnostics_channel";
+if (diagnostics_channel && !(diagnostics_channel as any).tracingChannel) {
+  (diagnostics_channel as any).tracingChannel = () => ({
+    hasSubscribers: false,
+    subscribe: () => {},
+    unsubscribe: () => {},
+    tracePromise: async (fn: any) => fn(),
+    traceSync: (fn: any) => fn(),
+  });
+}
 
 import express from "express";
 import path from "path";
@@ -9,7 +15,8 @@ import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
-import { db } from "./src/db/index.ts";
+import { db, initDbSchema } from "./src/db/index.ts";
+import { getBackupsDir } from "./src/utils/paths.ts";
 import { 
   users, videoPosts, comments, autoReplyRules, pageSettings, 
   workPlanPages, workPlanPlatforms, workPlanItems, monthlyPlans, notifications 
@@ -1598,17 +1605,43 @@ app.get("/api/settings", requireAuth, async (req: AuthRequest, res) => {
 // User Roles Management Action
 import { adminAuth } from "./src/lib/firebase-admin.ts";
 
-app.post("/api/settings/roles", requireAuth, async (req, res) => {
+function checkIsSuperAdmin(user: any): boolean {
+  if (!user) return false;
+  const role = user.role || "";
+  const name = (user.name || "").toLowerCase();
+  const email = (user.email || "").toLowerCase();
+  return (
+    role === "Super Admin" ||
+    name.includes("super admin") ||
+    email === "admin@app.local" ||
+    email === "seanglyad@gmail.com"
+  );
+}
+
+function checkIsAdmin(user: any): boolean {
+  if (!user) return false;
+  if (checkIsSuperAdmin(user)) return true;
+  if (user.role === "Admin") {
+    if (Array.isArray(user.permissions) && user.permissions.length > 0) {
+      return user.permissions.includes("users:edit_role") || user.permissions.includes("users:create") || user.permissions.includes("manage_settings");
+    }
+    return true;
+  }
+  const perms = Array.isArray(user.permissions) ? user.permissions : [];
+  return perms.includes("users:edit_role") || perms.includes("users:create");
+}
+
+app.post("/api/settings/roles", requireAuth, async (req: AuthRequest, res) => {
   try {
+    const requestingUser = await getOrCreateDbUser(req.user!);
+    if (!checkIsAdmin(requestingUser)) {
+      return res.status(403).json({ error: "Only Administrators can create new user accounts!" });
+    }
+
     const { name, email, role, permissions, password, department } = req.body;
     if (!name || !email) return res.status(400).json({ error: "Name and email are required" });
 
-    const isSuperAdmin = 
-      role === "Admin" || 
-      role === "Super Admin" || 
-      name.toLowerCase().includes("super admin") || 
-      email === "admin@app.local" || 
-      email === "seanglyad@gmail.com";
+    const isSuperAdmin = checkIsSuperAdmin({ role, name, email });
 
     const defaultFullPerms = [
       "publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics",
@@ -1618,14 +1651,13 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
       "pages:manage", "comments:reply"
     ];
 
-    let finalPermissions = permissions || [];
+    let finalPermissions = permissions || (role === "Admin" ? defaultFullPerms : []);
     if (isSuperAdmin) {
       finalPermissions = Array.from(new Set([...finalPermissions, ...defaultFullPerms]));
     }
 
     let uid = "external_" + Date.now();
 
-    // Create user in Firebase Auth if a password is provided
     if (password) {
       try {
         const fbUser = await adminAuth.createUser({
@@ -1643,7 +1675,7 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
       uid,
       name,
       email,
-      passwordHash: password, // Store password for local login mechanism
+      passwordHash: password,
       role: role || "Editor",
       avatar: `https://images.unsplash.com/photo-${15000000000+Math.floor(Math.random()*999999999)}?auto=format&fit=crop&w=150&h=150&q=80`,
       permissions: finalPermissions,
@@ -1661,34 +1693,32 @@ app.post("/api/settings/roles", requireAuth, async (req, res) => {
 
 app.put("/api/settings/roles/:id", requireAuth, async (req: any, res) => {
   try {
-    const { name, email, role, permissions, sex, dob, phoneNumber, avatar, password, department } = req.body;
+    const requestingUser = await getOrCreateDbUser(req.user!);
     const userId = parseInt(req.params.id);
 
     const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!userResult.length) return res.status(404).json({ error: "User role not found" });
     const existingUser = userResult[0];
 
-    // Check if target or updated info represents Super Admin / Admin
-    const isTargetSuperAdmin = 
-      existingUser.role === "Admin" || 
-      existingUser.role === "Super Admin" || 
-      existingUser.name.toLowerCase().includes("super admin") || 
-      existingUser.email === "admin@app.local" || 
-      existingUser.email === "seanglyad@gmail.com";
+    const isEditingSelf = requestingUser.id === existingUser.id;
+    const isReqAdmin = checkIsAdmin(requestingUser);
+    const isReqSuperAdmin = checkIsSuperAdmin(requestingUser);
+    const isTargetSuperAdmin = checkIsSuperAdmin(existingUser);
 
-    const isReqSuperAdmin = req.user ? (
-      req.user.role === "Admin" || 
-      req.user.role === "Super Admin" || 
-      (req.user.name && req.user.name.toLowerCase().includes("super admin")) || 
-      req.user.email === "admin@app.local" || 
-      req.user.email === "seanglyad@gmail.com"
-    ) : false;
-
-    if (isTargetSuperAdmin && !isReqSuperAdmin) {
-      return res.status(403).json({ error: "Only Super Admin can edit or modify Super Admin account!" });
+    if (!isEditingSelf && !isReqAdmin) {
+      return res.status(403).json({ error: "Only Administrators can edit other user accounts!" });
     }
 
-    // Optional: handle password update via Firebase
+    if (isTargetSuperAdmin && !isReqSuperAdmin) {
+      return res.status(403).json({ error: "Only Super Admin can edit Super Admin accounts!" });
+    }
+
+    const { name, email, role, permissions, sex, dob, phoneNumber, avatar, password, department } = req.body;
+
+    if ((role !== undefined || permissions !== undefined) && !isReqAdmin) {
+      return res.status(403).json({ error: "You do not have permission to modify roles or permissions!" });
+    }
+
     if (password && !existingUser.uid.startsWith("external_")) {
       try {
         await adminAuth.updateUser(existingUser.uid, { password });
@@ -1700,7 +1730,7 @@ app.put("/api/settings/roles/:id", requireAuth, async (req: any, res) => {
     const updateData: Record<string, any> = {};
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
-    if (role !== undefined) updateData.role = role;
+    if (role !== undefined && isReqAdmin) updateData.role = role;
     if (sex !== undefined) updateData.sex = sex;
     if (dob !== undefined) updateData.dob = dob;
     if (phoneNumber !== undefined) updateData.phoneNumber = phoneNumber;
@@ -1708,15 +1738,15 @@ app.put("/api/settings/roles/:id", requireAuth, async (req: any, res) => {
     if (password !== undefined) updateData.passwordHash = password;
     if (department !== undefined) updateData.department = department;
 
-    if (permissions !== undefined || isTargetSuperAdmin) {
-      const defaultFullPerms = [
-        "publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics",
-        "workplan:view", "workplan:create", "workplan:edit", "workplan:delete", "workplan:export",
-        "users:view", "users:create", "users:edit_role", "users:delete",
-        "backup:create", "backup:restore", "backup:delete",
-        "pages:manage", "comments:reply"
-      ];
+    if (isReqAdmin && permissions !== undefined) {
       if (isTargetSuperAdmin) {
+        const defaultFullPerms = [
+          "publish_posts", "manage_settings", "delete_content", "auto_replies", "view_analytics",
+          "workplan:view", "workplan:create", "workplan:edit", "workplan:delete", "workplan:export",
+          "users:view", "users:create", "users:edit_role", "users:delete",
+          "backup:create", "backup:restore", "backup:delete",
+          "pages:manage", "comments:reply"
+        ];
         updateData.permissions = defaultFullPerms;
       } else {
         updateData.permissions = permissions;
@@ -1735,21 +1765,21 @@ app.put("/api/settings/roles/:id", requireAuth, async (req: any, res) => {
   }
 });
 
-app.delete("/api/settings/roles/:id", requireAuth, async (req, res) => {
+app.delete("/api/settings/roles/:id", requireAuth, async (req: any, res) => {
   try {
+    const requestingUser = await getOrCreateDbUser(req.user!);
+    if (!checkIsAdmin(requestingUser)) {
+      return res.status(403).json({ error: "Only Administrators can delete user accounts!" });
+    }
+
     const userId = parseInt(req.params.id);
     const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (userResult.length > 0) {
       const targetUser = userResult[0];
-      const isSuperAdmin = 
-        targetUser.role === "Admin" || 
-        targetUser.role === "Super Admin" || 
-        targetUser.name.toLowerCase().includes("super admin") || 
-        targetUser.email === "admin@app.local" || 
-        targetUser.email === "seanglyad@gmail.com";
+      const isSuperAdmin = checkIsSuperAdmin(targetUser);
 
       if (isSuperAdmin) {
-        return res.status(403).json({ error: "Super Admin or Admin role cannot be deleted!" });
+        return res.status(403).json({ error: "Super Admin account cannot be deleted!" });
       }
 
       const uid = targetUser.uid;
@@ -2327,10 +2357,7 @@ function formatTelegramCaption(filename: string, filePath: string, sizeInBytes?:
 // 1. Get List of backups
 app.get("/api/backup/list", requireAuth, async (req, res) => {
   try {
-    const backupsDir = path.resolve("backups");
-    if (!fs.existsSync(backupsDir)) {
-      fs.mkdirSync(backupsDir, { recursive: true });
-    }
+    const backupsDir = getBackupsDir();
     const files = fs.readdirSync(backupsDir);
     const list = files
       .filter(f => f.startsWith("backup_") && f.endsWith(".sql"))
@@ -2356,10 +2383,7 @@ app.post("/api/backup/now", requireAuth, async (req: AuthRequest, res) => {
     const dbUser = await getOrCreateDbUser(req.user!);
     const page = await db.select().from(pageSettings).where(eq(pageSettings.userId, dbUser.id)).limit(1);
     
-    const backupsDir = path.resolve("backups");
-    if (!fs.existsSync(backupsDir)) {
-      fs.mkdirSync(backupsDir, { recursive: true });
-    }
+    const backupsDir = getBackupsDir();
 
     const filename = getBackupFilename();
     const destPath = path.join(backupsDir, filename);
@@ -2423,7 +2447,7 @@ app.post("/api/backup/restore", requireAuth, async (req, res) => {
     const { filename } = req.body;
     if (!filename) return res.status(400).json({ error: "Filename is required" });
 
-    const backupsDir = path.resolve("backups");
+    const backupsDir = getBackupsDir();
     const filePath = path.join(backupsDir, filename);
 
     if (!fs.existsSync(filePath) || !filename.startsWith("backup_") || !filename.endsWith(".sql")) {
@@ -2445,10 +2469,7 @@ app.post("/api/backup/upload-restore", requireAuth, async (req, res) => {
     if (!fileData) return res.status(400).json({ error: "File data is required" });
 
     const buffer = Buffer.from(fileData, 'base64');
-    const backupsDir = path.resolve("backups");
-    if (!fs.existsSync(backupsDir)) {
-      fs.mkdirSync(backupsDir, { recursive: true });
-    }
+    const backupsDir = getBackupsDir();
     
     const safeFilename = filename || `backup_uploaded_${Date.now()}.sql`;
     const backupPath = path.join(backupsDir, safeFilename);
@@ -2469,7 +2490,7 @@ app.post("/api/backup/:filename/telegram", requireAuth, async (req: AuthRequest,
     const dbUser = await getOrCreateDbUser(req.user!);
     const page = await db.select().from(pageSettings).where(eq(pageSettings.userId, dbUser.id)).limit(1);
 
-    const backupsDir = path.resolve("backups");
+    const backupsDir = getBackupsDir();
     const filePath = path.join(backupsDir, filename);
 
     if (!fs.existsSync(filePath) || !filename.startsWith("backup_") || !filename.endsWith(".sql")) {
@@ -2538,7 +2559,7 @@ app.post("/api/backup/test-telegram", requireAuth, async (req, res) => {
 app.delete("/api/backup/:filename", requireAuth, async (req, res) => {
   try {
     const { filename } = req.params;
-    const backupsDir = path.resolve("backups");
+    const backupsDir = getBackupsDir();
     const filePath = path.join(backupsDir, filename);
 
     if (!fs.existsSync(filePath) || !filename.startsWith("backup_") || (!filename.endsWith(".db") && !filename.endsWith(".sql"))) {
@@ -2558,7 +2579,7 @@ app.get("/api/backup/download", requireAuth, async (req, res) => {
     const { file } = req.query;
     if (!file || typeof file !== "string") return res.status(400).send("File query param is required");
 
-    const backupsDir = path.resolve("backups");
+    const backupsDir = getBackupsDir();
     const filePath = path.join(backupsDir, file);
 
     if (!fs.existsSync(filePath) || !file.startsWith("backup_") || (!file.endsWith(".db") && !file.endsWith(".sql"))) {
@@ -2618,10 +2639,7 @@ function startBackupScheduler() {
         if (shouldBackup) {
           console.log(`[Backup Scheduler] Triggering automatic ${schedule} backup for page settings ID ${config.id}...`);
           
-          const backupsDir = path.resolve("backups");
-          if (!fs.existsSync(backupsDir)) {
-            fs.mkdirSync(backupsDir, { recursive: true });
-          }
+          const backupsDir = getBackupsDir();
 
           const filename = getBackupFilename();
           const destPath = path.join(backupsDir, filename);
@@ -2794,6 +2812,13 @@ async function bootstrap() {
     } catch (e) {}
   }
 
+  // Auto-init schema tables if missing
+  try {
+    await initDbSchema();
+  } catch (err) {
+    console.warn("initDbSchema warning:", err);
+  }
+
   // Seed database with mock data if empty
   try {
     await seedDatabase();
@@ -2848,7 +2873,19 @@ async function bootstrap() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.resolve("dist");
+    const isPkgPath = Boolean((process as any).pkg);
+    const baseAppPath = isPkgPath ? path.dirname(process.execPath) : process.cwd();
+    const snapshotDistPath = path.resolve(__dirname, "../dist");
+    const snapshotDistPathSelf = path.resolve(__dirname, "dist");
+    const localDistPath = path.resolve(baseAppPath, "dist");
+    
+    let distPath = localDistPath;
+    if (fs.existsSync(snapshotDistPath)) {
+      distPath = snapshotDistPath;
+    } else if (fs.existsSync(snapshotDistPathSelf)) {
+      distPath = snapshotDistPathSelf;
+    }
+    console.log(`[MetaStream Backend] Serving static assets from: ${distPath}`);
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
@@ -2861,7 +2898,7 @@ async function bootstrap() {
   let activePort = PORT;
 
   async function startServer(requestedPort: number) {
-    const maxRetries = 10;
+    const maxRetries = 50;
     let port = requestedPort;
 
     for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
@@ -2879,19 +2916,39 @@ async function bootstrap() {
         process.env.APP_URL = finalUrl;
         console.log(`[MetaStream Backend] Open your browser at ${finalUrl}`);
 
-        import("child_process").then(({ exec }) => {
+        try {
+          const { exec } = require("child_process");
           if (process.platform === "win32") {
-            exec(`start "" "${finalUrl}"`);
+            exec(`start "" "${finalUrl}"`, (err: any) => {
+              if (err) {
+                exec(`explorer "${finalUrl}"`, (err2: any) => {
+                  if (err2) {
+                    const edgePaths = [
+                      "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+                      "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
+                    ];
+                    for (const ep of edgePaths) {
+                      if (fs.existsSync(ep)) {
+                        exec(`"${ep}" "${finalUrl}"`);
+                        break;
+                      }
+                    }
+                  }
+                });
+              }
+            });
           } else if (process.platform === "darwin") {
             exec(`open "${finalUrl}"`);
           } else {
             exec(`xdg-open "${finalUrl}"`);
           }
-        }).catch(err => console.error("Failed to open browser:", err));
+        } catch (err) {
+          console.error("Failed to open browser:", err);
+        }
         return;
       } catch (err: any) {
-        if (err?.code === "EADDRINUSE" && attempt < maxRetries) {
-          console.warn(`[MetaStream Backend] Port ${port} already in use, trying ${port + 1}...`);
+        if (err?.code === "EADDRINUSE") {
+          console.warn(`[MetaStream Backend] Port ${port} is in use by another application. Trying next port ${port + 1}...`);
           port += 1;
           continue;
         }
