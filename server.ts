@@ -2457,6 +2457,10 @@ app.post("/api/backup/restore", requireAuth, async (req, res) => {
 
     fs.copyFileSync(filePath, getDbPath());
     res.json({ success: true, message: "Database restored successfully" });
+    setTimeout(() => {
+      console.log("[Backup Restore] Restarting server to refresh database handles...");
+      process.exit(0);
+    }, 1000);
   } catch (err: any) {
     console.error("Restore failed:", err);
     res.status(500).json({ error: err.message || "Failed to restore backup" });
@@ -2478,6 +2482,10 @@ app.post("/api/backup/upload-restore", requireAuth, async (req, res) => {
 
     fs.copyFileSync(backupPath, getDbPath());
     res.json({ success: true, message: "Database restored from uploaded file successfully" });
+    setTimeout(() => {
+      console.log("[Backup Restore] Restarting server to refresh database handles...");
+      process.exit(0);
+    }, 1000);
   } catch (err: any) {
     console.error("Upload restore failed:", err);
     res.status(500).json({ error: err.message || "Failed to restore from uploaded file" });

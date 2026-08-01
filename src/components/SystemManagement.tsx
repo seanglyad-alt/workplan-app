@@ -314,7 +314,8 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
       const r = await fetchWithAuth("/api/backup/restore", { method: "POST", body: JSON.stringify({ filename }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
-      toast(true, "✅ Database ត្រូវបាន Restore! សូម Refresh ទំព័រ។");
+      toast(true, "✅ Database ត្រូវបាន Restore! កំពុងដំឡើងទិន្នន័យឡើងវិញ...");
+      setTimeout(() => { window.location.reload(); }, 2500);
     } catch (err: any) { toast(false, "❌ " + (err.message || "Restore failed")); }
     finally { setRestoring(""); }
   };
@@ -345,8 +346,8 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
-      toast(true, "✅ Upload & Restore ជោគជ័យ! សូម Refresh ទំព័រ។");
-      loadBackups();
+      toast(true, "✅ Upload & Restore ជោគជ័យ! កំពុងដំឡើងទិន្នន័យឡើងវិញ...");
+      setTimeout(() => { window.location.reload(); }, 2500);
     } catch (err: any) { toast(false, "❌ " + (err.message || "Upload failed")); }
     finally { setUploading(false); }
   };

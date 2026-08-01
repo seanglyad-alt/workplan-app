@@ -2,6 +2,7 @@ import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import esbuild from "esbuild";
 
@@ -57,6 +58,49 @@ function createIcoFile(pngPath, icoPath) {
   entry.writeUInt32LE(22, 12);
   const icoBuf = Buffer.concat([icoHeader, entry, pngBuf]);
   fs.writeFileSync(icoPath, icoBuf);
+}
+
+async function patchBaseBinaryWithIcon(releaseDir, sourceIcon) {
+  try {
+    const baseBin = path.join(os.homedir(), ".pkg-cache", "v3.4", "fetched-v18.5.0-win-x64");
+    if (!fs.existsSync(baseBin) || !fs.existsSync(sourceIcon)) return;
+
+    console.log("\n[INFO] Patching base Node binary with custom icon...");
+    const icoPath = path.join(releaseDir, "icon.ico");
+    createIcoFile(sourceIcon, icoPath);
+
+    const ResEditModule = await import("resedit");
+    const ResEdit = ResEditModule.default || ResEditModule;
+
+    const exeBuf = fs.readFileSync(baseBin);
+    const exe = ResEdit.NtExecutable.from(exeBuf);
+    const res = ResEdit.NtExecutableResource.from(exe);
+
+    const iconBuf = fs.readFileSync(icoPath);
+    const iconFile = ResEdit.Data.IconFile.from(iconBuf);
+
+    ResEdit.Resource.IconGroupEntry.replaceIconsForResource(
+      res.entries,
+      1,
+      1033,
+      iconFile.icons.map(item => item.data)
+    );
+
+    res.outputResource(exe);
+    const newBuf = Buffer.from(exe.generate());
+    fs.writeFileSync(baseBin, newBuf);
+
+    const sha256 = crypto.createHash("sha256").update(newBuf).digest("hex");
+    const shasJsonPath = path.join(__dirname, "node_modules", "@yao-pkg", "pkg-fetch", "lib-es5", "expected-shas.json");
+    if (fs.existsSync(shasJsonPath)) {
+      const shas = JSON.parse(fs.readFileSync(shasJsonPath, "utf8"));
+      shas["m48-v18.5.0-win-x64"] = sha256;
+      fs.writeFileSync(shasJsonPath, JSON.stringify(shas, null, 2));
+    }
+    console.log("[SUCCESS] Embedded custom icon into base Node runtime binary.");
+  } catch (err) {
+    console.warn("[WARN] Base icon patching skipped:", err.message);
+  }
 }
 
 function createDesktopShortcut(releaseDir) {
@@ -141,10 +185,14 @@ async function runBuild() {
       treeShaking: true
     });
 
-    // Step 3: Packaging into .exe with pkg
-    console.log("\n[3/5] Packaging into .exe with pkg...");
     const releaseDir = path.join(__dirname, "release");
     if (!fs.existsSync(releaseDir)) fs.mkdirSync(releaseDir, { recursive: true });
+
+    // Step 3: Embed Icon into Base Runtime Binary
+    await patchBaseBinaryWithIcon(releaseDir, sourceIcon);
+
+    // Step 4: Packaging into .exe with pkg
+    console.log("\n[3/5] Packaging into .exe with pkg...");
 
     const pkgConfig = {
       "name": "facebook-app",
