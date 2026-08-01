@@ -105,7 +105,7 @@ export default function WorkPlan({
   // Manager settings & dynamic print comments
   const [department, setDepartment] = useState("");
   const [employee, setEmployee] = useState("");
-  const [managerComments, setManagerComments] = useState("ផែនការការងារសប្តាហ៍នេះអនុវត្តបានល្អប្រសើរ។ វីដេអូ Reels មានលទ្ធផលទាក់ទាញខ្លាំង។ បន្តជំរុញការផលិតមាតិកាដែលជាវីដេអូកាត់ខ្លីបន្ថែម។");
+  const [managerComments, setManagerComments] = useState("");
   const [generationDate, setGenerationDate] = useState("31 May 2026");
   const [companyName, setCompanyName] = useState("YOUR COMPANY");
   const [companySlogan, setCompanySlogan] = useState("Your Company Slogan Here");
@@ -1625,7 +1625,7 @@ export default function WorkPlan({
                           MANAGER COMMENTS
                         </h3>
                         <div className="text-xs text-slate-800 leading-relaxed font-sans bg-slate-50 p-4 border border-slate-200 rounded-xl min-h-[120px] print:p-2.5 print:min-h-[75px] print:text-[9.5px] print-comments-box">
-                          {managerComments || "មិនមានមតិយោបល់បន្ថែមទេ។"}
+                          {managerComments}
                         </div>
                       </div>
 
@@ -1837,7 +1837,7 @@ export default function WorkPlan({
                                     MANAGER COMMENTS
                                   </h3>
                                   <div className="text-xs text-slate-800 leading-relaxed font-sans bg-slate-50 p-4 border border-slate-200 rounded-xl min-h-[120px] print:p-2.5 print:min-h-[75px] print:text-[9.5px] print-comments-box">
-                                    {managerComments || "មិនមានមតិយោបល់បន្ថែមទេ។"}
+                                    {managerComments}
                                   </div>
                                 </div>
 
@@ -2085,7 +2085,7 @@ export default function WorkPlan({
                             />
                           </div>
                           <div className="hidden print:block text-xs text-slate-800 leading-relaxed font-sans bg-slate-50 p-4 border border-slate-200 rounded-xl min-h-[120px] print:p-2.5 print:min-h-[60px] print-comments-box">
-                            {managerComments || "មិនមានមតិយោបល់បន្ថែមទេ។"}
+                            {managerComments}
                           </div>
                         </div>
 
