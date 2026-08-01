@@ -13,10 +13,15 @@ export function getAppDataDir(): string {
 
   if (process.env.RENDER || process.env.IS_RENDER) {
     const renderDir = "/var/data";
-    if (!fs.existsSync(renderDir)) {
-      try { fs.mkdirSync(renderDir, { recursive: true }); } catch (e) {}
+    try {
+      if (!fs.existsSync(renderDir)) {
+        fs.mkdirSync(renderDir, { recursive: true });
+      }
+      fs.accessSync(renderDir, fs.constants.W_OK);
+      return renderDir;
+    } catch (e) {
+      console.warn("[Paths] /var/data is not writable on Render. Falling back to local data directory.");
     }
-    return renderDir;
   }
 
   const home = os.homedir();
@@ -31,7 +36,14 @@ export function getAppDataDir(): string {
   }
 
   if (!fs.existsSync(baseDir)) {
-    fs.mkdirSync(baseDir, { recursive: true });
+    try {
+      fs.mkdirSync(baseDir, { recursive: true });
+    } catch (e) {
+      baseDir = path.resolve(process.cwd(), "data");
+      if (!fs.existsSync(baseDir)) {
+        fs.mkdirSync(baseDir, { recursive: true });
+      }
+    }
   }
   return baseDir;
 }
@@ -67,7 +79,11 @@ export function getBackupsDir(): string {
   const dataDir = getAppDataDir();
   const backupsDir = path.join(dataDir, "backups");
   if (!fs.existsSync(backupsDir)) {
-    fs.mkdirSync(backupsDir, { recursive: true });
+    try {
+      fs.mkdirSync(backupsDir, { recursive: true });
+    } catch (e) {
+      console.error("[Paths] Failed to create backups dir:", e);
+    }
   }
   return backupsDir;
 }

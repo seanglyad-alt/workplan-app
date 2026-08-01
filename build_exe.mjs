@@ -61,7 +61,7 @@ function createIcoFile(pngPath, icoPath) {
 
 function createDesktopShortcut(releaseDir) {
   console.log("\n[5/5] Creating Windows Shortcut with Icon...");
-  const exePath = path.resolve(releaseDir, "facebook-app.exe");
+  const exePath = path.resolve(releaseDir, "Facebook-Scheduler.exe");
   const icoPath = path.resolve(releaseDir, "icon.ico");
   const lnkPath = path.resolve(releaseDir, "Facebook Video Scheduler.lnk");
   
@@ -162,6 +162,7 @@ async function runBuild() {
     fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgConfig, null, 2));
 
     const outputExe = path.join(releaseDir, "facebook-app.exe");
+    const schedulerExe = path.join(releaseDir, "Facebook-Scheduler.exe");
 
     execFileSync(nodeBin, [
       pkgBin,
@@ -170,8 +171,11 @@ async function runBuild() {
       "-o", outputExe
     ], { stdio: "inherit", cwd: __dirname });
 
-    // Step 4: Patch PE header to GUI mode for silent execution
+    // Patch PE header to GUI mode for silent execution
     makeExeGuiSilent(outputExe);
+
+    // Create named executable
+    fs.copyFileSync(outputExe, schedulerExe);
 
     // Step 5: Create Icon & Windows Shortcut
     if (fs.existsSync(sourceIcon)) {
@@ -182,7 +186,7 @@ async function runBuild() {
 
     console.log("\n==========================================");
     console.log("[SUCCESS] Silent standalone application ready at:");
-    console.log(outputExe);
+    console.log(schedulerExe);
     console.log("==========================================");
   } catch (error) {
     console.error("\n[ERROR] Build failed!", error);

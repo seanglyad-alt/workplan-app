@@ -12,11 +12,12 @@ if (diagnostics_channel && !(diagnostics_channel as any).tracingChannel) {
 import express from "express";
 import path from "path";
 import fs from "fs";
+import { exec } from "child_process";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { db, initDbSchema } from "./src/db/index.ts";
-import { getBackupsDir } from "./src/utils/paths.ts";
+import { getBackupsDir, getDbPath } from "./src/utils/paths.ts";
 import { 
   users, videoPosts, comments, autoReplyRules, pageSettings, 
   workPlanPages, workPlanPlatforms, workPlanItems, monthlyPlans, notifications 
@@ -2454,7 +2455,7 @@ app.post("/api/backup/restore", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid backup file" });
     }
 
-    fs.copyFileSync(filePath, "local.db");
+    fs.copyFileSync(filePath, getDbPath());
     res.json({ success: true, message: "Database restored successfully" });
   } catch (err: any) {
     console.error("Restore failed:", err);
@@ -2475,7 +2476,7 @@ app.post("/api/backup/upload-restore", requireAuth, async (req, res) => {
     const backupPath = path.join(backupsDir, safeFilename);
     fs.writeFileSync(backupPath, buffer);
 
-    fs.copyFileSync(backupPath, "local.db");
+    fs.copyFileSync(backupPath, getDbPath());
     res.json({ success: true, message: "Database restored from uploaded file successfully" });
   } catch (err: any) {
     console.error("Upload restore failed:", err);
@@ -2917,7 +2918,6 @@ async function bootstrap() {
         console.log(`[MetaStream Backend] Open your browser at ${finalUrl}`);
 
         try {
-          const { exec } = require("child_process");
           if (process.platform === "win32") {
             exec(`start "" "${finalUrl}"`, (err: any) => {
               if (err) {
