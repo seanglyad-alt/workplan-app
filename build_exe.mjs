@@ -44,20 +44,27 @@ function makeExeGuiSilent(exePath) {
   }
 }
 
-function createIcoFile(pngPath, icoPath) {
-  const pngBuf = fs.readFileSync(pngPath);
-  const icoHeader = Buffer.from([0, 0, 1, 0, 1, 0]);
-  const entry = Buffer.alloc(16);
-  entry.writeUInt8(0, 0);
-  entry.writeUInt8(0, 1);
-  entry.writeUInt8(0, 2);
-  entry.writeUInt8(0, 3);
-  entry.writeUInt16LE(1, 4);
-  entry.writeUInt16LE(32, 6);
-  entry.writeUInt32LE(pngBuf.length, 8);
-  entry.writeUInt32LE(22, 12);
-  const icoBuf = Buffer.concat([icoHeader, entry, pngBuf]);
-  fs.writeFileSync(icoPath, icoBuf);
+async function createIcoFile(pngPath, icoPath) {
+  try {
+    const pngToIcoModule = await import("png-to-ico");
+    const pngToIco = pngToIcoModule.default || pngToIcoModule;
+    const icoBuf = await pngToIco(pngPath);
+    fs.writeFileSync(icoPath, icoBuf);
+  } catch (e) {
+    const pngBuf = fs.readFileSync(pngPath);
+    const icoHeader = Buffer.from([0, 0, 1, 0, 1, 0]);
+    const entry = Buffer.alloc(16);
+    entry.writeUInt8(0, 0);
+    entry.writeUInt8(0, 1);
+    entry.writeUInt8(0, 2);
+    entry.writeUInt8(0, 3);
+    entry.writeUInt16LE(1, 4);
+    entry.writeUInt16LE(32, 6);
+    entry.writeUInt32LE(pngBuf.length, 8);
+    entry.writeUInt32LE(22, 12);
+    const icoBuf = Buffer.concat([icoHeader, entry, pngBuf]);
+    fs.writeFileSync(icoPath, icoBuf);
+  }
 }
 
 async function patchBaseBinaryWithIcon(releaseDir, sourceIcon) {
@@ -67,7 +74,7 @@ async function patchBaseBinaryWithIcon(releaseDir, sourceIcon) {
 
     console.log("\n[INFO] Patching base Node binary with custom icon...");
     const icoPath = path.join(releaseDir, "icon.ico");
-    createIcoFile(sourceIcon, icoPath);
+    await createIcoFile(sourceIcon, icoPath);
 
     const ResEditModule = await import("resedit");
     const ResEdit = ResEditModule.default || ResEditModule;
@@ -97,7 +104,7 @@ async function patchBaseBinaryWithIcon(releaseDir, sourceIcon) {
       shas["m48-v18.5.0-win-x64"] = sha256;
       fs.writeFileSync(shasJsonPath, JSON.stringify(shas, null, 2));
     }
-    console.log("[SUCCESS] Embedded custom icon into base Node runtime binary.");
+    console.log("[SUCCESS] Embedded custom multi-res icon into base Node runtime binary.");
   } catch (err) {
     console.warn("[WARN] Base icon patching skipped:", err.message);
   }
@@ -188,14 +195,20 @@ async function runBuild() {
     const releaseDir = path.join(__dirname, "release");
     if (!fs.existsSync(releaseDir)) fs.mkdirSync(releaseDir, { recursive: true });
 
+    // Clean up old duplicate binary if present
+    const oldExePath = path.join(releaseDir, "facebook-app.exe");
+    if (fs.existsSync(oldExePath)) {
+      try { fs.unlinkSync(oldExePath); } catch (e) {}
+    }
+
     // Step 3: Embed Icon into Base Runtime Binary
     await patchBaseBinaryWithIcon(releaseDir, sourceIcon);
 
-    // Step 4: Packaging into .exe with pkg
-    console.log("\n[3/5] Packaging into .exe with pkg...");
+    // Step 4: Packaging into single .exe with pkg
+    console.log("\n[3/5] Packaging into single .exe with pkg...");
 
     const pkgConfig = {
-      "name": "facebook-app",
+      "name": "Facebook-Scheduler",
       "main": "server.cjs",
       "bin": "server.cjs",
       "pkg": {
@@ -209,32 +222,28 @@ async function runBuild() {
     const pkgJsonPath = path.join(buildDir, "package.json");
     fs.writeFileSync(pkgJsonPath, JSON.stringify(pkgConfig, null, 2));
 
-    const outputExe = path.join(releaseDir, "facebook-app.exe");
-    const schedulerExe = path.join(releaseDir, "Facebook-Scheduler.exe");
+    const singleExePath = path.join(releaseDir, "Facebook-Scheduler.exe");
 
     execFileSync(nodeBin, [
       pkgBin,
       pkgJsonPath,
       "-t", "node18-win-x64",
-      "-o", outputExe
+      "-o", singleExePath
     ], { stdio: "inherit", cwd: __dirname });
 
     // Patch PE header to GUI mode for silent execution
-    makeExeGuiSilent(outputExe);
-
-    // Create named executable
-    fs.copyFileSync(outputExe, schedulerExe);
+    makeExeGuiSilent(singleExePath);
 
     // Step 5: Create Icon & Windows Shortcut
     if (fs.existsSync(sourceIcon)) {
       const icoPath = path.join(releaseDir, "icon.ico");
-      createIcoFile(sourceIcon, icoPath);
+      await createIcoFile(sourceIcon, icoPath);
       createDesktopShortcut(releaseDir);
     }
 
     console.log("\n==========================================");
-    console.log("[SUCCESS] Silent standalone application ready at:");
-    console.log(schedulerExe);
+    console.log("[SUCCESS] Single silent executable ready at:");
+    console.log(singleExePath);
     console.log("==========================================");
   } catch (error) {
     console.error("\n[ERROR] Build failed!", error);

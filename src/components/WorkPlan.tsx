@@ -381,7 +381,12 @@ export default function WorkPlan({
     setLoading(true);
     try {
       const res = await fetchWithAuth("/api/workplan");
-      if (!res.ok) throw new Error("មិនអាចទាញទិន្នន័យពីម៉ាស៊ីនបម្រើបានទេ!");
+      if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("សម័យប្រជុំ (Session) ត្រូវបានផ្លាស់ប្តូរ! សូមចាកចេញ (Log out) ហើយចូលប្រើប្រាស់ម្តងទៀត។");
+        }
+        throw new Error("មិនអាចទាញទិន្នន័យពីម៉ាស៊ីនបម្រើបានទេ!");
+      }
       const data = await res.json();
       setItems(data.items || []);
       setPages(data.pages || []);

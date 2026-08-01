@@ -42,6 +42,7 @@
   "devDependencies": {
     "@yao-pkg/pkg": "^6.22.0",
     "pkg": "^5.8.1",
+    "png-to-ico": "^3.0.2",
     "rcedit": "^5.0.2",
     "resedit": "^3.0.2"
   }

@@ -43,4 +43,28 @@ export async function initDbSchema() {
       console.warn("Table init warning:", e);
     }
   }
+
+  // Ensure any columns missing in older restored database files are added safely
+  const migrations = [
+    `ALTER TABLE users ADD COLUMN permissions TEXT;`,
+    `ALTER TABLE users ADD COLUMN sex TEXT;`,
+    `ALTER TABLE users ADD COLUMN dob TEXT;`,
+    `ALTER TABLE users ADD COLUMN phone_number TEXT;`,
+    `ALTER TABLE users ADD COLUMN department TEXT;`,
+    `ALTER TABLE page_settings ADD COLUMN page_access_token TEXT;`,
+    `ALTER TABLE page_settings ADD COLUMN facebook_token TEXT;`,
+    `ALTER TABLE page_settings ADD COLUMN facebook_pages TEXT;`,
+    `ALTER TABLE video_posts ADD COLUMN carousel_slides TEXT;`,
+    `ALTER TABLE video_posts ADD COLUMN facebook_post_id TEXT;`,
+    `ALTER TABLE video_posts ADD COLUMN facebook_error TEXT;`,
+    `ALTER TABLE monthly_plans ADD COLUMN name_kh TEXT;`
+  ];
+
+  for (const m of migrations) {
+    try {
+      await client.execute(m);
+    } catch (e) {
+      // Ignore duplicate column errors
+    }
+  }
 }
