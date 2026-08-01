@@ -817,10 +817,19 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <a href={`/api/backup/download?file=${b.filename}`}
+                              <button type="button" onClick={() => {
+                                  const token = sessionStorage.getItem("app_token") || "";
+                                  const url = `/api/backup/download?file=${encodeURIComponent(b.filename)}&token=${encodeURIComponent(token)}`;
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = b.filename;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                }}
                                 className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-all" title="ទាញយក">
                                 <Download className="w-3.5 h-3.5" />
-                              </a>
+                              </button>
                               <button type="button" onClick={() => handleSendTelegram(b.filename)}
                                 disabled={telegramSending === b.filename}
                                 className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer disabled:opacity-50" title="ផ្ញើ Telegram">

@@ -546,14 +546,23 @@ export default function BackupSettings({ settings, onSettingsSaved, isLoading }:
                               </button>
 
                               {/* Download File */}
-                              <a
-                                href={`/api/backup/download?file=${backup.filename}`}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const token = sessionStorage.getItem("app_token") || "";
+                                  const url = `/api/backup/download?file=${encodeURIComponent(backup.filename)}&token=${encodeURIComponent(token)}`;
+                                  const a = document.createElement("a");
+                                  a.href = url;
+                                  a.download = backup.filename;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  document.body.removeChild(a);
+                                }}
                                 className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg border border-emerald-500/20 transition-all inline-block"
                                 title="ទាញយក (Download)"
-                                download
                               >
                                 <Download className="w-3.5 h-3.5" />
-                              </a>
+                              </button>
 
                               {/* Restore Backup */}
                               <button
