@@ -2588,7 +2588,7 @@ export default function WorkPlan({
                 
                 {/* 1. WEEK SELECTION TAB CONTROLLERS */}
                 <div className="sticky top-[64px] z-30 backdrop-blur-md bg-[#111115]/95 print-hide print:hidden flex flex-col xl:flex-row justify-between items-stretch xl:items-center p-2.5 border border-white/[0.08] rounded-2xl gap-3 shadow-xl">
-                  <div className="flex items-center gap-1.5 font-sans overflow-x-auto custom-scrollbar flex-nowrap w-full xl:w-auto pb-1 xl:pb-0">
+                  <div className="flex items-center gap-1 sm:gap-1.5 font-sans w-full flex-1">
                     {getWeeksForMonth(selectedMonthId).map((wk) => {
                       const wkRangeLabel = getWeekRangeLabel(wk, selectedMonthId);
                       const weekColors: Record<number, { active: string; inactive: string; icon: string }> = {
@@ -2597,6 +2597,7 @@ export default function WorkPlan({
                         3: { active: "bg-violet-500/20 border-violet-500/40 text-violet-300 shadow-md shadow-violet-500/10", inactive: "bg-[#16161a] border-violet-500/10 text-slate-400 hover:text-violet-300 hover:bg-violet-500/[0.06] hover:border-violet-500/20", icon: "text-violet-400" },
                         4: { active: "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-md shadow-emerald-500/10", inactive: "bg-[#16161a] border-emerald-500/10 text-slate-400 hover:text-emerald-300 hover:bg-emerald-500/[0.06] hover:border-emerald-500/20", icon: "text-emerald-400" },
                         5: { active: "bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-md shadow-amber-500/10", inactive: "bg-[#16161a] border-amber-500/10 text-slate-400 hover:text-amber-300 hover:bg-amber-500/[0.06] hover:border-amber-500/20", icon: "text-amber-400" },
+                        6: { active: "bg-rose-500/20 border-rose-500/40 text-rose-300 shadow-md shadow-rose-500/10", inactive: "bg-[#16161a] border-rose-500/10 text-slate-400 hover:text-rose-300 hover:bg-rose-500/[0.06] hover:border-rose-500/20", icon: "text-rose-400" },
                       };
                       const color = weekColors[wk] || weekColors[1];
                       const isActive = selectedWeek === wk;
@@ -2605,11 +2606,11 @@ export default function WorkPlan({
                           key={wk}
                           type="button"
                           onClick={() => setSelectedWeek(wk)}
-                          className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl font-bold font-sans border transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${isActive ? color.active : color.inactive}`}
+                          className={`flex-1 min-w-0 text-[10px] sm:text-xs px-1.5 sm:px-2.5 py-1.5 sm:py-2 rounded-xl font-bold font-sans border transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 ${isActive ? color.active : color.inactive}`}
                           title={wkRangeLabel.range}
                         >
                           <Calendar className={`w-3.5 h-3.5 shrink-0 ${isActive ? "" : color.icon}`} />
-                          <span>សប្តាហ៍ទី {wk}: {wkRangeLabel.rangeShort}</span>
+                          <span className="truncate">សប្តាហ៍ទី {wk}: {wkRangeLabel.rangeShort}</span>
                         </button>
                       );
                     })}
