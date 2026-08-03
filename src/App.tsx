@@ -1151,19 +1151,25 @@ export default function App() {
 
             {/* Right: Actions & Profile */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-              {/* DESKTOP ONLY: Month Selector & Create Month Button */}
+              {/* Month Selector & Create Month Button */}
               {activeTab === "workplan" && (
-                <div className="hidden xl:flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   {/* Month Dropdown Selector Popover */}
                   {workPlanMonths.length > 0 && (
                     <div className="relative">
                       <button
                         type="button"
                         onClick={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer font-sans shadow-sm ${theme === 'light' ? 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800' : 'bg-[#16161a] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200'}`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer font-sans shadow-sm border ${
+                          theme === 'light' 
+                            ? 'bg-blue-50/80 hover:bg-blue-100/80 border-blue-200 text-blue-900' 
+                            : 'bg-[#16161a] hover:bg-white/[0.08] border-blue-500/30 text-blue-300'
+                        }`}
                       >
                         <Calendar className="w-3.5 h-3.5 text-blue-400" />
-                        <span>ជ្រើសរើសខែ</span>
+                        <span className="font-bold">
+                          {workPlanMonths.find(m => m.id === workPlanSelectedMonthId)?.nameKh || "ជ្រើសរើសខែ"}
+                        </span>
                         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isMonthDropdownOpen ? "rotate-180" : ""}`} />
                       </button>
 
