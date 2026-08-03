@@ -397,7 +397,7 @@ export default function WorkPlan({
       if (data.pages && data.pages.length > 0) setFormPageId(data.pages[0].id);
       if (data.platforms && data.platforms.length > 0) setFormPlatformId(data.platforms[0].id);
 
-      // Select active month: prioritize month with items, or IN_PROGRESS month
+      // Select active month: prioritize month with items
       if (data.months && data.months.length > 0) {
         const monthWithMostItems = data.months.reduce((best: any, m: any) => {
           const count = (data.items || []).filter((i: any) => i.month === m.id || (!i.month && m.id === "2026-06")).length;
@@ -406,12 +406,16 @@ export default function WorkPlan({
 
         if (monthWithMostItems.id && monthWithMostItems.count > 0) {
           setSelectedMonthId(monthWithMostItems.id);
-        } else {
-          const alreadySelectedExists = data.months.some((m: any) => m.id === selectedMonthId);
-          if (!alreadySelectedExists) {
-            const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
-            if (defaultActive) setSelectedMonthId(defaultActive.id);
+          
+          // Also auto-select week containing items within that month if current week has 0
+          const monthItems = (data.items || []).filter((i: any) => i.month === monthWithMostItems.id || (!i.month && monthWithMostItems.id === "2026-06"));
+          const firstWeekWithItems = monthItems.find((i: any) => i.weekNumber !== undefined)?.weekNumber;
+          if (firstWeekWithItems && firstWeekWithItems >= 1 && firstWeekWithItems <= 5) {
+            setSelectedWeekNumber(firstWeekWithItems);
           }
+        } else {
+          const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
+          if (defaultActive) setSelectedMonthId(defaultActive.id);
         }
       }
       setError(null);
