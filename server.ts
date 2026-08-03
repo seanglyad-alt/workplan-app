@@ -2193,153 +2193,96 @@ app.post("/api/simulate/activity", requireAuth, async (req: AuthRequest, res) =>
     let userPosts = await db.select().from(videoPosts).where(eq(videoPosts.userId, dbUser.id));
 
     // If no posts, seed one default post
-    if (userPosts.length === 0) {
-      const defaultPost = {
-        id: "post_sim_" + Date.now(),
-        userId: dbUser.id,
-        title: "វីដេអូមេរៀនខ្លី៖ គន្លឹះដោះស្រាយបញ្ហាកូដ",
-        description: "ការណែនាំខ្លីៗពីការសរសេរកូដឱ្យមានប្រសិទ្ធភាពខ្ពស់ និងរហ័សទ្វេដង។",
-        status: "published",
-        createdAt: new Date().toISOString()
-      } as any;
-      const result = await db.insert(videoPosts).values(defaultPost).returning();
-      userPosts = [result[0] as any];
+async function exportDbToSqlFile(destPath: string) {
+  const isRemoteDb = !!(process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("libsql:") || process.env.DATABASE_URL.startsWith("http")));
+
+  if (isRemoteDb) {
+    console.log("[Backup] Exporting remote database rows to SQLite backup file:", destPath);
+    if (fs.existsSync(destPath)) {
+      try { fs.unlinkSync(destPath); } catch (e) {}
     }
+    const destClient = createClient({ url: `file:${destPath}` });
 
-    const randomPost = userPosts[Math.floor(Math.random() * userPosts.length)];
+    await destClient.execute("PRAGMA foreign_keys = OFF;");
 
-    const simulatedComments = [
-      "សួស្តីប្អូន តើមានវគ្គសិក្សាកាត់តវីដេអូសម្រាប់អ្នកចាប់ផ្តើមដំបូងអត់?",
-      "ចាប់អារម្មណ៍ខ្លាំងណាស់ តើវីដេអូនេះប្រើកាមេរ៉ាប្រភេទណាដែរ?",
-      "ចង់សួរតម្លៃសេវាហ្វេសប៊ុកផុស និងស្កេតស៊ុលវីដេអូមួយខែប៉ុន្មាន?",
-      "Like និង Follow រួចរាល់ហើយបង! បង្កើតមាតិកាល្អៗបន្ថែមទៀតណា!",
-      "តើអាចជួយពន្យល់ពីវិធីដោះស្រាយបញ្ហា Reached Limit ផុសវីដេអូបានទេ?"
-    ];
-    const simulatedAuthors = [
-      { name: "ចាន់ សំភ័ស្ស", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80" },
-      { name: "គឹម លាង", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
-      { name: "ផាន់ណិត សេង", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" }
+    const statements = [
+      `CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, name TEXT, avatar TEXT, password_hash TEXT, role TEXT DEFAULT 'Editor', permissions TEXT, sex TEXT, dob TEXT, phone_number TEXT, department TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`,
+      `CREATE TABLE IF NOT EXISTS video_posts (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), title TEXT NOT NULL, description TEXT, video_url TEXT, tags TEXT, status TEXT NOT NULL, scheduled_time TEXT, likes_count INTEGER DEFAULT 0, comments_count INTEGER DEFAULT 0, shares_count INTEGER DEFAULT 0, views_count INTEGER DEFAULT 0, thumbnail_url TEXT, auto_reply_rule_id TEXT, category TEXT, aspect_ratio TEXT, facebook_post_id TEXT, facebook_error TEXT, carousel_slides TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`,
+      `CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, post_id TEXT NOT NULL REFERENCES video_posts(id) ON DELETE CASCADE, post_title TEXT, author_name TEXT, author_avatar TEXT, comment_text TEXT NOT NULL, comment_timestamp TEXT NOT NULL, is_replied INTEGER DEFAULT 0, reply_text TEXT, is_auto_replied INTEGER DEFAULT 0);`,
+      `CREATE TABLE IF NOT EXISTS auto_reply_rules (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), rule_name TEXT NOT NULL, trigger_keyword TEXT NOT NULL, condition TEXT NOT NULL, reply_template TEXT NOT NULL, is_active INTEGER DEFAULT 1, times_triggered INTEGER DEFAULT 0);`,
+      `CREATE TABLE IF NOT EXISTS page_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE, page_id TEXT, page_name TEXT, page_username TEXT, category TEXT, page_avatar TEXT, cover_image TEXT, followers_count INTEGER DEFAULT 0, likes_count INTEGER DEFAULT 0, is_auto_responder_enabled INTEGER DEFAULT 1, notification_schedules TEXT, report_logo TEXT, backup_schedule TEXT DEFAULT 'disabled', is_telegram_backup_enabled INTEGER DEFAULT 0, telegram_bot_token TEXT, telegram_chat_id TEXT, last_backup_time TEXT, backup_time TEXT DEFAULT '03:00', facebook_token TEXT, facebook_user_id TEXT, facebook_user_name TEXT, facebook_user_avatar TEXT, facebook_user_email TEXT, facebook_pages TEXT, page_access_token TEXT, developer_name TEXT, developer_telegram_link TEXT, footer_app_name TEXT, footer_copyright_year TEXT, footer_copyright_text TEXT, footer_badge1 TEXT, footer_badge2 TEXT, footer_show_clock INTEGER DEFAULT 1, footer_show_date INTEGER DEFAULT 1, footer_is_sticky INTEGER DEFAULT 0);`,
+      `CREATE TABLE IF NOT EXISTS work_plan_pages (id TEXT PRIMARY KEY, user_id INTEGER REFERENCES users(id), name TEXT NOT NULL, is_protected INTEGER DEFAULT 0);`,
+      `CREATE TABLE IF NOT EXISTS work_plan_platforms (id TEXT PRIMARY KEY, user_id INTEGER REFERENCES users(id), name TEXT NOT NULL, is_protected INTEGER DEFAULT 0);`,
+      `CREATE TABLE IF NOT EXISTS work_plan_items (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), title TEXT NOT NULL, subtitle TEXT, post_type TEXT, content_type TEXT, page_id TEXT REFERENCES work_plan_pages(id), platform_id TEXT, week_number INTEGER, day_of_week TEXT, time_slot TEXT, status TEXT, notes TEXT, month TEXT);`,
+      `CREATE TABLE IF NOT EXISTS monthly_plans (id TEXT PRIMARY KEY, user_id INTEGER REFERENCES users(id), name TEXT NOT NULL, name_kh TEXT, status TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`,
+      `CREATE TABLE IF NOT EXISTS notifications (id TEXT PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), title TEXT NOT NULL, message TEXT NOT NULL, type TEXT, is_read INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP);`
     ];
 
-    const randomText = simulatedComments[Math.floor(Math.random() * simulatedComments.length)];
-    const randomAuthor = simulatedAuthors[Math.floor(Math.random() * simulatedAuthors.length)];
+    for (const sqlStr of statements) {
+      await destClient.execute(sqlStr);
+    }
 
-    const newComment = {
-      id: "comment_" + Date.now(),
-      postId: randomPost.id,
-      postTitle: randomPost.title,
-      authorName: randomAuthor.name,
-      authorAvatar: randomAuthor.avatar,
-      text: randomText,
-      timestamp: new Date().toISOString(),
-      isReplied: false,
-      isAutoReplied: false
-    } as any;
+    const tables = [
+      { name: "users", sql: "INSERT OR REPLACE INTO users (id, uid, email, name, avatar, password_hash, role, permissions, sex, dob, phone_number, department, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", cols: ["id", "uid", "email", "name", "avatar", "password_hash", "role", "permissions", "sex", "dob", "phone_number", "department", "created_at"] },
+      { name: "work_plan_pages", sql: "INSERT OR REPLACE INTO work_plan_pages (id, user_id, name, is_protected) VALUES (?, ?, ?, ?);", cols: ["id", "user_id", "name", "is_protected"] },
+      { name: "work_plan_platforms", sql: "INSERT OR REPLACE INTO work_plan_platforms (id, user_id, name, is_protected) VALUES (?, ?, ?, ?);", cols: ["id", "user_id", "name", "is_protected"] },
+      { name: "monthly_plans", sql: "INSERT OR REPLACE INTO monthly_plans (id, user_id, name, name_kh, status, created_at) VALUES (?, ?, ?, ?, ?, ?);", cols: ["id", "user_id", "name", "name_kh", "status", "created_at"] },
+      { name: "work_plan_items", sql: "INSERT OR REPLACE INTO work_plan_items (id, user_id, title, subtitle, post_type, content_type, page_id, platform_id, week_number, day_of_week, time_slot, status, notes, month) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", cols: ["id", "user_id", "title", "subtitle", "post_type", "content_type", "page_id", "platform_id", "week_number", "day_of_week", "time_slot", "status", "notes", "month"] }
+    ];
 
-    // Insert comment in DB
-    const insertedComment = await db.insert(comments).values(newComment).returning();
+    for (const t of tables) {
+      try {
+        const res = await client.execute(`SELECT * FROM ${t.name};`);
+        for (const row of res.rows) {
+          const args = t.cols.map(c => (row as any)[c] !== undefined ? (row as any)[c] : null);
+          await destClient.execute({ sql: t.sql, args });
+        }
+      } catch (e) {}
+    }
 
-    // Trigger rule check asynchronously
-    await handleAutoResponseTrigger(insertedComment[0], dbUser.id);
-
-    // Fetch the updated comment so that auto-reply fields are included if matched
-    const updatedCommentList = await db.select().from(comments).where(eq(comments.id, newComment.id)).limit(1);
-    const commentToSend = updatedCommentList[0] || insertedComment[0];
-
-    // General Notification in DB
-    await db.insert(notifications).values({
-      id: "notif_comm_" + Date.now(),
-      userId: dbUser.id,
-      title: "មតិយោបល់ថ្មី (New Comment)",
-      message: `អ្នកប្រើប្រាស់ '${commentToSend.authorName}' បានបញ្ចេញមតិ៖ "${commentToSend.text.substring(0, 40)}..."`,
-      type: "comment",
-      createdAt: new Date().toISOString(),
-      isRead: false
-    });
-
-    res.json({ success: true, activity: commentToSend });
-  } catch (err: any) {
-    console.error("Activity simulation error:", err);
-    res.status(500).json({ error: "Failed to simulate activity: " + err.message });
+    await destClient.execute("PRAGMA foreign_keys = ON;");
+    if (typeof (destClient as any).close === 'function') (destClient as any).close();
+  } else {
+    fs.copyFileSync(getDbPath(), destPath);
   }
-});
-
-// --- SYSTEM BACKUP & RESTORE ROUTING ---
-
-function getBackupFilename() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  return `backup_${year}-${month}-${day}_${hours}-${minutes}.sql`;
 }
 
-function formatTelegramCaption(filename: string, filePath: string, sizeInBytes?: number) {
-  let dateStr = "";
-  let timeStr = "";
-  let sizeStr = "Unknown";
+async function restoreSqlFileToDb(sqlFilePath: string) {
+  const isRemoteDb = !!(process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("libsql:") || process.env.DATABASE_URL.startsWith("http")));
 
-  try {
-    let size = sizeInBytes;
-    if (size === undefined) {
-      const stats = fs.statSync(filePath);
-      size = stats.size;
+  if (isRemoteDb) {
+    console.log("[Restore] Importing rows from uploaded SQL file to remote DB...");
+    const srcClient = createClient({ url: `file:${sqlFilePath}` });
+
+    await client.execute("PRAGMA foreign_keys = OFF;");
+
+    const tables = [
+      { name: "users", sql: "INSERT OR REPLACE INTO users (id, uid, email, name, avatar, password_hash, role, permissions, sex, dob, phone_number, department, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", cols: ["id", "uid", "email", "name", "avatar", "password_hash", "role", "permissions", "sex", "dob", "phone_number", "department", "created_at"] },
+      { name: "work_plan_pages", sql: "INSERT OR REPLACE INTO work_plan_pages (id, user_id, name, is_protected) VALUES (?, ?, ?, ?);", cols: ["id", "user_id", "name", "is_protected"] },
+      { name: "work_plan_platforms", sql: "INSERT OR REPLACE INTO work_plan_platforms (id, user_id, name, is_protected) VALUES (?, ?, ?, ?);", cols: ["id", "user_id", "name", "is_protected"] },
+      { name: "monthly_plans", sql: "INSERT OR REPLACE INTO monthly_plans (id, user_id, name, name_kh, status, created_at) VALUES (?, ?, ?, ?, ?, ?);", cols: ["id", "user_id", "name", "name_kh", "status", "created_at"] },
+      { name: "work_plan_items", sql: "INSERT OR REPLACE INTO work_plan_items (id, user_id, title, subtitle, post_type, content_type, page_id, platform_id, week_number, day_of_week, time_slot, status, notes, month) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", cols: ["id", "user_id", "title", "subtitle", "post_type", "content_type", "page_id", "platform_id", "week_number", "day_of_week", "time_slot", "status", "notes", "month"] }
+    ];
+
+    for (const t of tables) {
+      try {
+        const res = await srcClient.execute(`SELECT * FROM ${t.name};`);
+        for (const row of res.rows) {
+          const args = t.cols.map(c => (row as any)[c] !== undefined ? (row as any)[c] : null);
+          await client.execute({ sql: t.sql, args });
+        }
+      } catch (e) {}
     }
-    const sizeInMB = size / (1024 * 1024);
-    sizeStr = `${sizeInMB.toFixed(1)} MB`;
-    
-    const match = filename.match(/backup_(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})/);
-    if (match) {
-      dateStr = match[1];
-      timeStr = `${match[2]}:${match[3]}`;
-    } else {
-      const now = new Date();
-      dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    }
-  } catch (err: any) {
-    console.error("[formatTelegramCaption] Error reading stats for " + filePath + ":", err.message);
-    const now = new Date();
-    dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    await client.execute("PRAGMA foreign_keys = ON;");
+    if (typeof (srcClient as any).close === 'function') (srcClient as any).close();
+  } else {
+    closeDbClient();
+    fs.copyFileSync(sqlFilePath, getDbPath());
+    reinitDb();
+    await initDbSchema();
   }
-
-  return [
-    `⬇️ System Backup`,
-    ``,
-    `🗄️ Database: local.db`,
-    `📄 File: ${filename}`,
-    `📅 Date: ${dateStr} ${timeStr}`,
-    `📦 Size: ${sizeStr}`,
-    ``,
-    `Backup file saved on server. Download from Admin Panel → Backup & Restore.`
-  ].join("\n");
 }
-
-// 1. Get List of backups
-app.get("/api/backup/list", requireAuth, async (req, res) => {
-  try {
-    const backupsDir = getBackupsDir();
-    const files = fs.readdirSync(backupsDir);
-    const list = files
-      .filter(f => f.startsWith("backup_") && f.endsWith(".sql"))
-      .map(f => {
-        const filePath = path.join(backupsDir, f);
-        const stats = fs.statSync(filePath);
-        return {
-          filename: f,
-          size: stats.size,
-          createdAt: stats.birthtime.toISOString()
-        };
-      })
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    res.json(list);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message || "Failed to list backups" });
-  }
-});
 
 // 2. Trigger backup now
 app.post("/api/backup/now", requireAuth, async (req: AuthRequest, res) => {
@@ -2348,12 +2291,10 @@ app.post("/api/backup/now", requireAuth, async (req: AuthRequest, res) => {
     const page = await db.select().from(pageSettings).where(eq(pageSettings.userId, dbUser.id)).limit(1);
     
     const backupsDir = getBackupsDir();
-
     const filename = getBackupFilename();
     const destPath = path.join(backupsDir, filename);
     
-    // Copy active database
-    fs.copyFileSync(getDbPath(), destPath);
+    await exportDbToSqlFile(destPath);
     
     let telegramSent = false;
     let telegramError = null;
