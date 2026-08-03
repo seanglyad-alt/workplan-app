@@ -27,6 +27,7 @@ import { requireAuth, AuthRequest } from "./src/middleware/auth.ts";
 import { getOrCreateUser } from "./src/db/users.ts";
 import { eq, and, desc, sql, or, isNull } from "drizzle-orm";
 import jwt from "jsonwebtoken";
+import { createClient } from "@libsql/client";
 
 dotenv.config();
 
@@ -2716,6 +2717,38 @@ app.delete("/api/backup/:filename", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message || "Failed to delete backup file" });
+  }
+});
+
+// 6.5. Export all data as JSON (for cross-environment sync)
+app.get("/api/backup/export-json", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const [allUsers, allPages, allPlatforms, allMonths, allItems, allPosts, allSettings] = await Promise.all([
+      db.select().from(users),
+      db.select().from(workPlanPages),
+      db.select().from(workPlanPlatforms),
+      db.select().from(monthlyPlans),
+      db.select().from(workPlanItems),
+      db.select().from(videoPosts),
+      db.select().from(pageSettings)
+    ]);
+    
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      users: allUsers,
+      workPlanPages: allPages,
+      workPlanPlatforms: allPlatforms,
+      monthlyPlans: allMonths,
+      workPlanItems: allItems,
+      videoPosts: allPosts,
+      pageSettings: allSettings
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="db-export-${new Date().toISOString().replace(/[:.]/g,'-')}.json"`);
+    res.json(exportData);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Export failed" });
   }
 });
 
