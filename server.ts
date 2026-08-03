@@ -1908,9 +1908,19 @@ app.post("/api/notifications/read-all", requireAuth, async (req, res) => {
   }
 });
 
+let workplanCache: { data: any; timestamp: number } | null = null;
+
+function invalidateWorkplanCache() {
+  workplanCache = null;
+}
+
 // Work Plan API Routes
 app.get("/api/workplan", requireAuth, async (req: AuthRequest, res) => {
   try {
+    if (workplanCache && (Date.now() - workplanCache.timestamp < 3000)) {
+      return res.json(workplanCache.data);
+    }
+
     const dbUser = await getOrCreateDbUser(req.user!);
 
     let [rawItems, pages, platforms, months] = await Promise.all([
@@ -1957,7 +1967,10 @@ app.get("/api/workplan", requireAuth, async (req: AuthRequest, res) => {
         ? { name: item.createdByName, avatar: item.createdByAvatar || "", email: item.createdByEmail || "" }
         : null,
     }));
-    res.json({ items, pages, platforms, months });
+
+    const responsePayload = { items, pages, platforms, months };
+    workplanCache = { data: responsePayload, timestamp: Date.now() };
+    res.json(responsePayload);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch work plan data" });
