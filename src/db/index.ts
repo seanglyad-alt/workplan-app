@@ -6,7 +6,11 @@ import { getDbPath } from '../utils/paths.ts';
 function createDbConnection() {
   const dbFilePath = getDbPath();
   const dbUrl = process.env.DATABASE_URL || `file:${dbFilePath}`;
-  const newClient = createClient({ url: dbUrl });
+  const authToken = process.env.DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
+  const newClient = createClient({
+    url: dbUrl,
+    authToken: authToken || undefined
+  });
   const newDb = drizzle(newClient, { schema });
   return { client: newClient, db: newDb };
 }
