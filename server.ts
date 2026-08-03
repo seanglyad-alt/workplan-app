@@ -1935,11 +1935,10 @@ app.get("/api/workplan", requireAuth, async (req: AuthRequest, res) => {
           createdByEmail: users.email,
         })
         .from(workPlanItems)
-        .leftJoin(users, eq(workPlanItems.userId, users.id))
-        .where(isAdmin ? undefined : eq(workPlanItems.userId, dbUser.id)),
-      db.select().from(workPlanPages).where(isAdmin ? undefined : or(eq(workPlanPages.userId, dbUser.id), isNull(workPlanPages.userId))),
-      db.select().from(workPlanPlatforms).where(isAdmin ? undefined : or(eq(workPlanPlatforms.userId, dbUser.id), isNull(workPlanPlatforms.userId))),
-      db.select().from(monthlyPlans).where(isAdmin ? undefined : or(eq(monthlyPlans.userId, dbUser.id), isNull(monthlyPlans.userId)))
+        .leftJoin(users, eq(workPlanItems.userId, users.id)),
+      db.select().from(workPlanPages),
+      db.select().from(workPlanPlatforms),
+      db.select().from(monthlyPlans)
     ]);
 
     let finalRawItems = rawItems;
@@ -2545,6 +2544,13 @@ app.post("/api/backup/restore", requireAuth, async (req: AuthRequest, res) => {
           }
         }
       }
+
+      // Auto-adopt all restored items, pages, platforms to active dbUser.id
+      const activeUser = await getOrCreateDbUser(req.user!);
+      await db.update(workPlanItems).set({ userId: activeUser.id });
+      await db.update(workPlanPages).set({ userId: activeUser.id });
+      await db.update(workPlanPlatforms).set({ userId: activeUser.id });
+      await db.update(monthlyPlans).set({ userId: activeUser.id });
     } catch (linkErr) {
       console.warn("[Restore] Could not re-link user (non-fatal):", linkErr);
     }
