@@ -2314,7 +2314,7 @@ function formatTelegramCaption(filename: string, filePath: string, sizeInBytes?:
   }
 
   return [
-    `⬇️ System Backup`,
+    `⬇️ System Backup for Work Plan App`,
     ``,
     `🗄️ Database: local.db`,
     `📄 File: ${filename}`,
