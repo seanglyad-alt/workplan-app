@@ -1486,7 +1486,7 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setConfirmDel(null)}>
             <motion.div initial={{ scale: 0.9, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 16 }}
-              className="bg-[#111116] border border-rose-500/20 rounded-3xl w-full max-w-sm p-6 text-center space-y-4 shadow-2xl"
+              className="bg-gradient-to-b from-[#1d1e28] via-[#161720] to-[#111218] border border-rose-500/30 rounded-3xl w-full max-w-sm p-6 text-center space-y-4 shadow-2xl shadow-rose-950/40"
               onClick={e => e.stopPropagation()}>
               <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6 text-rose-400" />

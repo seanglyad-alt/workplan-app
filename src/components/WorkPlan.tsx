@@ -4418,33 +4418,33 @@ export default function WorkPlan({
         {confirmDialog && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md font-sans max-h-screen overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#121217] border border-white/[0.12] w-full max-w-sm rounded-[24px] shadow-2xl shadow-rose-950/20 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-gradient-to-b from-[#1d1e28] via-[#161720] to-[#111218] border border-rose-500/30 w-full max-w-sm rounded-[24px] shadow-2xl shadow-rose-950/40 overflow-hidden"
             >
               <div className="p-6 text-center">
-                <div className="flex justify-center mb-4 text-rose-500">
-                  <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
-                    <AlertTriangle className="w-8 h-8 text-rose-500" />
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                    <AlertTriangle className="w-8 h-8 text-rose-400" />
                   </div>
                 </div>
-                <h3 className="text-white text-center font-black text-xl mb-2 tracking-wide">បញ្ជាក់ការលុប</h3>
-                <p className="text-slate-100 text-sm font-medium text-center mb-6 leading-relaxed">
+                <h3 className="text-white text-center font-black text-xl mb-2 tracking-wide font-sans">បញ្ជាក់ការលុប</h3>
+                <p className="text-slate-100 text-sm font-medium text-center mb-6 leading-relaxed font-sans">
                   {confirmDialog.message}
                 </p>
-                <div className="flex gap-3 w-full">
+                <div className="flex gap-3 w-full font-sans">
                   <button
                     type="button"
                     onClick={() => setConfirmDialog(null)}
-                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-bold rounded-xl transition-all cursor-pointer"
+                    className="flex-1 py-3 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/60 text-slate-100 text-sm font-bold rounded-xl transition-all cursor-pointer shadow-md"
                   >
                     បិទ
                   </button>
                   <button
                     type="button"
                     onClick={confirmDialog.onConfirm}
-                    className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-600/30"
+                    className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-600/30"
                   >
                     លុប
                   </button>
@@ -4459,21 +4459,21 @@ export default function WorkPlan({
         {alertMsg && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md font-sans max-h-screen overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#121217] border border-white/[0.12] w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-gradient-to-b from-[#1a2234] via-[#141b2a] to-[#0f1420] border border-blue-500/30 w-full max-w-sm rounded-[24px] shadow-2xl shadow-blue-950/40 overflow-hidden"
             >
               <div className="p-6 text-center">
-                <h3 className="text-white text-center font-black text-xl mb-2 tracking-wide">សារប្រាប់ (Notification)</h3>
-                <p className="text-slate-100 text-sm font-medium text-center mb-6 leading-relaxed">
+                <h3 className="text-white text-center font-black text-xl mb-2 tracking-wide font-sans">សារប្រាប់ (Notification)</h3>
+                <p className="text-slate-100 text-sm font-medium text-center mb-6 leading-relaxed font-sans">
                   {alertMsg}
                 </p>
-                <div className="flex w-full">
+                <div className="flex w-full font-sans">
                   <button
                     type="button"
                     onClick={() => setAlertMsg(null)}
-                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-600/30"
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-600/30"
                   >
                     យល់ព្រម
                   </button>
