@@ -2686,7 +2686,7 @@ export default function WorkPlan({
 
                           return (
                             <div key={day.key} className="space-y-0.5 font-sans p-1 text-center select-none">
-                              <span className="text-xs font-bold text-slate-200 block tracking-wide">
+                              <span className="text-sm font-black text-white block tracking-wide">
                                 {day.kh.split(" ")[0]}
                               </span>
                               <div className="text-sm font-black font-mono inline-flex items-center justify-center tracking-tight">
