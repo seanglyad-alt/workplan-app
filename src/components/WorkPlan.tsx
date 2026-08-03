@@ -4416,33 +4416,35 @@ export default function WorkPlan({
 
       <AnimatePresence>
         {confirmDialog && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm p-4 font-sans max-h-screen overflow-y-auto">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md font-sans max-h-screen overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0f0f13] border border-white/[0.08] w-full max-w-sm rounded-[24px] shadow-2xl shadow-rose-900/10 overflow-hidden"
+              className="bg-[#121217] border border-white/[0.12] w-full max-w-sm rounded-[24px] shadow-2xl shadow-rose-950/20 overflow-hidden"
             >
-              <div className="p-6">
+              <div className="p-6 text-center">
                 <div className="flex justify-center mb-4 text-rose-500">
-                  <AlertTriangle className="w-12 h-12" />
+                  <div className="w-14 h-14 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                    <AlertTriangle className="w-8 h-8 text-rose-500" />
+                  </div>
                 </div>
-                <h3 className="text-white text-center font-bold text-lg mb-2">បញ្ជាក់ការលុប</h3>
-                <p className="text-slate-400 text-[13px] text-center mb-6 leading-relaxed">
+                <h3 className="text-white text-center font-black text-xl mb-2 tracking-wide">បញ្ជាក់ការលុប</h3>
+                <p className="text-slate-100 text-sm font-medium text-center mb-6 leading-relaxed">
                   {confirmDialog.message}
                 </p>
-                <div className="flex gap-2 w-full">
+                <div className="flex gap-3 w-full">
                   <button
                     type="button"
                     onClick={() => setConfirmDialog(null)}
-                    className="flex-1 py-2.5 bg-[#16161a] hover:bg-white/[0.05] border border-white/[0.06] text-slate-300 text-[13px] font-medium rounded-xl transition-all cursor-pointer"
+                    className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-bold rounded-xl transition-all cursor-pointer"
                   >
                     បិទ
                   </button>
                   <button
                     type="button"
                     onClick={confirmDialog.onConfirm}
-                    className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-[13px] font-bold rounded-xl transition-all cursor-pointer"
+                    className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-600/30"
                   >
                     លុប
                   </button>
@@ -4455,23 +4457,23 @@ export default function WorkPlan({
 
       <AnimatePresence>
         {alertMsg && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm p-4 font-sans max-h-screen overflow-y-auto">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md font-sans max-h-screen overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-[#0f0f13] border border-white/[0.08] w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden"
+              className="bg-[#121217] border border-white/[0.12] w-full max-w-sm rounded-[24px] shadow-2xl overflow-hidden"
             >
-              <div className="p-6">
-                <h3 className="text-white text-center font-bold text-lg mb-2">សារប្រាប់ (Notification)</h3>
-                <p className="text-slate-400 text-[13px] text-center mb-6 leading-relaxed">
+              <div className="p-6 text-center">
+                <h3 className="text-white text-center font-black text-xl mb-2 tracking-wide">សារប្រាប់ (Notification)</h3>
+                <p className="text-slate-100 text-sm font-medium text-center mb-6 leading-relaxed">
                   {alertMsg}
                 </p>
                 <div className="flex w-full">
                   <button
                     type="button"
                     onClick={() => setAlertMsg(null)}
-                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-bold rounded-xl transition-all cursor-pointer"
+                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-600/30"
                   >
                     យល់ព្រម
                   </button>

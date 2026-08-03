@@ -1492,15 +1492,15 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                 <Trash2 className="w-6 h-6 text-rose-400" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white">លុបអ្នកប្រើ?</h3>
-                <p className="text-xs text-slate-500 mt-1.5">
+                <h3 className="text-base font-bold text-white">លុបអ្នកប្រើ?</h3>
+                <p className="text-xs text-slate-100 mt-1.5 leading-relaxed font-medium">
                   តើអ្នកពិតជាចង់លុប <span className="text-white font-bold">{confirmDel.name}</span>?<br />
-                  <span className="text-rose-400">⚠️ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ!</span>
+                  <span className="text-rose-400 font-bold">⚠️ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ!</span>
                 </p>
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setConfirmDel(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-slate-400 text-xs font-bold cursor-pointer hover:text-white transition-all">
+                  className="flex-1 py-2.5 rounded-xl border border-white/[0.12] bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold cursor-pointer transition-all">
                   បោះបង់
                 </button>
                 <button type="button" onClick={() => handleDelete(confirmDel)}
