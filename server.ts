@@ -2507,6 +2507,18 @@ app.post("/api/backup/restore", requireAuth, async (req: AuthRequest, res) => {
       return res.status(400).json({ error: "Invalid backup file" });
     }
 
+    // Create an automatic safety backup of current live DB before replacing it
+    try {
+      const currentDb = getDbPath();
+      if (fs.existsSync(currentDb)) {
+        const safetyBackupName = `backup_auto_safety_before_restore_${Date.now()}.sql`;
+        fs.copyFileSync(currentDb, path.join(backupsDir, safetyBackupName));
+        console.log("[Safety Backup] Saved snapshot of current live DB to:", safetyBackupName);
+      }
+    } catch (safeErr) {
+      console.warn("[Safety Backup] Could not save safety snapshot:", safeErr);
+    }
+
     // Close old connection, replace file, then reinit fresh connection
     closeDbClient();
     fs.copyFileSync(filePath, getDbPath());
@@ -2557,6 +2569,18 @@ app.post("/api/backup/upload-restore", requireAuth, async (req: AuthRequest, res
     const safeFilename = filename || `backup_uploaded_${Date.now()}.sql`;
     const backupPath = path.join(backupsDir, safeFilename);
     fs.writeFileSync(backupPath, buffer);
+
+    // Create an automatic safety backup of current live DB before replacing it
+    try {
+      const currentDb = getDbPath();
+      if (fs.existsSync(currentDb)) {
+        const safetyBackupName = `backup_auto_safety_before_upload_${Date.now()}.sql`;
+        fs.copyFileSync(currentDb, path.join(backupsDir, safetyBackupName));
+        console.log("[Safety Backup] Saved snapshot of current live DB to:", safetyBackupName);
+      }
+    } catch (safeErr) {
+      console.warn("[Safety Backup] Could not save safety snapshot:", safeErr);
+    }
 
     // Close old connection, replace file, then reinit fresh connection
     closeDbClient();
