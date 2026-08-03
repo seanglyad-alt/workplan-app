@@ -2021,11 +2021,9 @@ app.put("/api/workplan/items/:id", requireAuth, async (req: AuthRequest, res) =>
     if (payload.pageId === "") payload.pageId = null;
     if (payload.platformId === "") payload.platformId = null;
 
-    const dbUser = await getOrCreateDbUser(req.user!);
-
     const result = await db.update(workPlanItems)
       .set(payload)
-      .where(and(eq(workPlanItems.id, req.params.id), eq(workPlanItems.userId, dbUser.id)))
+      .where(eq(workPlanItems.id, req.params.id))
       .returning();
     
     if (!result.length) return res.status(404).json({ error: "Work plan item not found" });
@@ -2039,11 +2037,11 @@ app.put("/api/workplan/items/:id", requireAuth, async (req: AuthRequest, res) =>
 
 app.delete("/api/workplan/items/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
-    await db.delete(workPlanItems).where(and(eq(workPlanItems.id, req.params.id), eq(workPlanItems.userId, dbUser.id)));
+    await db.delete(workPlanItems).where(eq(workPlanItems.id, req.params.id));
     invalidateWorkplanCache();
     res.json({ success: true });
   } catch (err) {
+    console.error("Delete item error:", err);
     res.status(500).json({ error: "Failed to delete work plan item" });
   }
 });
@@ -2057,7 +2055,7 @@ app.post("/api/workplan/months", requireAuth, async (req: AuthRequest, res) => {
 
     const dbUser = await getOrCreateDbUser(req.user!);
 
-    const existing = await db.select().from(monthlyPlans).where(and(eq(monthlyPlans.id, id), eq(monthlyPlans.userId, dbUser.id))).limit(1);
+    const existing = await db.select().from(monthlyPlans).where(eq(monthlyPlans.id, id)).limit(1);
     if (existing.length > 0) {
       return res.status(400).json({ error: "ផែនការសម្រាប់ខែនេះមានរួចរាល់ហើយ!" });
     }
@@ -2096,13 +2094,13 @@ app.post("/api/workplan/months", requireAuth, async (req: AuthRequest, res) => {
 
 app.put("/api/workplan/months/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
     const result = await db.update(monthlyPlans)
       .set(req.body)
-      .where(and(eq(monthlyPlans.id, req.params.id), eq(monthlyPlans.userId, dbUser.id)))
+      .where(eq(monthlyPlans.id, req.params.id))
       .returning();
     
     if (!result.length) return res.status(404).json({ error: "Month plan not found" });
+    invalidateWorkplanCache();
     res.json({ success: true, plan: result[0] });
   } catch (err) {
     res.status(500).json({ error: "Failed to update month plan" });
@@ -2111,10 +2109,9 @@ app.put("/api/workplan/months/:id", requireAuth, async (req: AuthRequest, res) =
 
 app.delete("/api/workplan/months/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
-    // Delete cascading items first based on user ownership
-    await db.delete(workPlanItems).where(and(eq(workPlanItems.month, req.params.id), eq(workPlanItems.userId, dbUser.id)));
-    await db.delete(monthlyPlans).where(and(eq(monthlyPlans.id, req.params.id), eq(monthlyPlans.userId, dbUser.id)));
+    await db.delete(workPlanItems).where(eq(workPlanItems.month, req.params.id));
+    await db.delete(monthlyPlans).where(eq(monthlyPlans.id, req.params.id));
+    invalidateWorkplanCache();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete month plan" });
@@ -2134,6 +2131,7 @@ app.post("/api/workplan/pages", requireAuth, async (req: AuthRequest, res) => {
       name
     }).returning();
 
+    invalidateWorkplanCache();
     res.status(201).json(result[0]);
   } catch (err) {
     res.status(500).json({ error: "Failed to create page" });
@@ -2142,8 +2140,8 @@ app.post("/api/workplan/pages", requireAuth, async (req: AuthRequest, res) => {
 
 app.delete("/api/workplan/pages/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
-    const result = await db.delete(workPlanPages).where(and(eq(workPlanPages.id, req.params.id), eq(workPlanPages.userId, dbUser.id)));
+    await db.delete(workPlanPages).where(eq(workPlanPages.id, req.params.id));
+    invalidateWorkplanCache();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete page" });
@@ -2152,9 +2150,9 @@ app.delete("/api/workplan/pages/:id", requireAuth, async (req: AuthRequest, res)
 
 app.put("/api/workplan/pages/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
-    const result = await db.update(workPlanPages).set(req.body).where(and(eq(workPlanPages.id, req.params.id), eq(workPlanPages.userId, dbUser.id))).returning();
+    const result = await db.update(workPlanPages).set(req.body).where(eq(workPlanPages.id, req.params.id)).returning();
     if (!result.length) return res.status(404).json({ error: "Page not found" });
+    invalidateWorkplanCache();
     res.json({ success: true, page: result[0] });
   } catch (err) {
     res.status(500).json({ error: "Failed to update page" });
@@ -2174,6 +2172,7 @@ app.post("/api/workplan/platforms", requireAuth, async (req: AuthRequest, res) =
       name
     }).returning();
 
+    invalidateWorkplanCache();
     res.status(201).json(result[0]);
   } catch (err) {
     res.status(500).json({ error: "Failed to create platform" });
@@ -2182,9 +2181,9 @@ app.post("/api/workplan/platforms", requireAuth, async (req: AuthRequest, res) =
 
 app.put("/api/workplan/platforms/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
-    const result = await db.update(workPlanPlatforms).set(req.body).where(and(eq(workPlanPlatforms.id, req.params.id), eq(workPlanPlatforms.userId, dbUser.id))).returning();
+    const result = await db.update(workPlanPlatforms).set(req.body).where(eq(workPlanPlatforms.id, req.params.id)).returning();
     if (!result.length) return res.status(404).json({ error: "Platform not found" });
+    invalidateWorkplanCache();
     res.json({ success: true, platform: result[0] });
   } catch (err) {
     res.status(500).json({ error: "Failed to update platform" });
@@ -2193,8 +2192,8 @@ app.put("/api/workplan/platforms/:id", requireAuth, async (req: AuthRequest, res
 
 app.delete("/api/workplan/platforms/:id", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const dbUser = await getOrCreateDbUser(req.user!);
-    const result = await db.delete(workPlanPlatforms).where(and(eq(workPlanPlatforms.id, req.params.id), eq(workPlanPlatforms.userId, dbUser.id)));
+    await db.delete(workPlanPlatforms).where(eq(workPlanPlatforms.id, req.params.id));
+    invalidateWorkplanCache();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete platform" });
