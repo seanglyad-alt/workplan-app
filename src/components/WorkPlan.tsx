@@ -1145,14 +1145,17 @@ export default function WorkPlan({
                     margin: 0 !important;
                   }
 
-                  /* Explicit page breaks for wrapping blocks with dynamic responsive height */
+                  /* Explicit page breaks for wrapping blocks with strict A4 single page height */
                   .print-week-wrapper {
                     page-break-after: always !important;
                     break-after: page !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
+                    max-height: 185mm !important;
+                    box-sizing: border-box !important;
+                    overflow: hidden !important;
                     margin: 0 !important;
-                    padding-bottom: 12px !important;
+                    padding-bottom: 4px !important;
                   }
                   .print-week-wrapper:last-child {
                     page-break-after: auto !important;
@@ -1166,20 +1169,25 @@ export default function WorkPlan({
                     justify-content: space-between !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
+                    height: 100% !important;
                   }
 
                   .print-bottom-row {
-                    margin-top: 10px !important;
+                    margin-top: 6px !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
+                    page-break-before: avoid !important;
+                    break-before: avoid !important;
                   }
 
                   .print-footer-legend {
-                    padding-top: 6px !important;
-                    margin-top: 6px !important;
-                    padding-bottom: 6px !important;
+                    padding-top: 4px !important;
+                    margin-top: 4px !important;
+                    padding-bottom: 4px !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
+                    page-break-before: avoid !important;
+                    break-before: avoid !important;
                   }
 
                   /* Crisp page breaks for multi-page workplans */
@@ -1300,20 +1308,23 @@ export default function WorkPlan({
                   
                   /* Item card container inside td */
                   #printable-area-plan td .print-item-card {
-                    padding: 2px 3px !important;
+                    padding: 1.5px 2.5px !important;
                     border-radius: 3px !important;
+                    margin-bottom: 1.5px !important;
                   }
                   #printable-area-plan td .print-item-card .font-bold.text-\\[11px\\] {
-                    font-size: 8.5px !important;
+                    font-size: 8px !important;
                     line-height: 1.1 !important;
+                    white-space: nowrap !important;
+                    overflow: hidden !important;
+                    text-overflow: ellipsis !important;
                   }
                   #printable-area-plan td .print-item-card .text-\\[9\\.5px\\] {
-                    font-size: 7.5px !important;
-                    margin-top: 0.5px !important;
+                    display: none !important;
                   }
                   #printable-area-plan td .print-item-card .text-\\[8px\\] {
-                    font-size: 6.5px !important;
-                    padding-top: 1px !important;
+                    font-size: 6px !important;
+                    padding-top: 0.5px !important;
                   }
                   
                   /* Widget boxes in bottom layout */
