@@ -2189,10 +2189,146 @@ app.post("/api/simulate/activity", requireAuth, async (req: AuthRequest, res) =>
   try {
     const dbUser = await getOrCreateDbUser(req.user!);
 
-    // Fetch user's posts from database
     let userPosts = await db.select().from(videoPosts).where(eq(videoPosts.userId, dbUser.id));
 
-    // If no posts, seed one default post
+    if (userPosts.length === 0) {
+      const defaultPost = {
+        id: "post_sim_" + Date.now(),
+        userId: dbUser.id,
+        title: "វីដេអូមេរៀនខ្លី៖ គន្លឹះដោះស្រាយបញ្ហាកូដ",
+        description: "ការណែនាំខ្លីៗពីការសរសេរកូដឱ្យមានប្រសិទ្ធភាពខ្ពស់ និងរហ័សទ្វេដង។",
+        status: "published",
+        createdAt: new Date().toISOString()
+      } as any;
+      const result = await db.insert(videoPosts).values(defaultPost).returning();
+      userPosts = [result[0] as any];
+    }
+
+    const randomPost = userPosts[Math.floor(Math.random() * userPosts.length)];
+
+    const simulatedComments = [
+      "សួស្តីប្អូន តើមានវគ្គសិក្សាកាត់តវីដេអូសម្រាប់អ្នកចាប់ផ្តើមដំបូងអត់?",
+      "ចាប់អារម្មណ៍ខ្លាំងណាស់ តើវីដេអូនេះប្រើកាមេរ៉ាប្រភេទណាដែរ?",
+      "ចង់សួរតម្លៃសេវាហ្វេសប៊ុកផុស និងស្កេតស៊ុលវីដេអូមួយខែប៉ុន្មាន?",
+      "Like និង Follow រួចរាល់ហើយបង! បង្កើតមាតិកាល្អៗបន្ថែមទៀតណា!",
+      "តើអាចជួយពន្យល់ពីវិធីដោះស្រាយបញ្ហា Reached Limit ផុសវីដេអូបានទេ?"
+    ];
+    const simulatedAuthors = [
+      { name: "ចាន់ សំភ័ស្ស", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=150&q=80" },
+      { name: "គឹម លាង", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&q=80" },
+      { name: "ផាន់ណិត សេង", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" }
+    ];
+
+    const randomText = simulatedComments[Math.floor(Math.random() * simulatedComments.length)];
+    const randomAuthor = simulatedAuthors[Math.floor(Math.random() * simulatedAuthors.length)];
+
+    const newComment = {
+      id: "comment_" + Date.now(),
+      postId: randomPost.id,
+      postTitle: randomPost.title,
+      authorName: randomAuthor.name,
+      authorAvatar: randomAuthor.avatar,
+      text: randomText,
+      timestamp: new Date().toISOString(),
+      isReplied: false,
+      isAutoReplied: false
+    } as any;
+
+    const insertedComment = await db.insert(comments).values(newComment).returning();
+    await handleAutoResponseTrigger(insertedComment[0], dbUser.id);
+    const updatedCommentList = await db.select().from(comments).where(eq(comments.id, newComment.id)).limit(1);
+    const commentToSend = updatedCommentList[0] || insertedComment[0];
+
+    await db.insert(notifications).values({
+      id: "notif_comm_" + Date.now(),
+      userId: dbUser.id,
+      title: "មតិយោបល់ថ្មី (New Comment)",
+      message: `អ្នកប្រើប្រាស់ '${commentToSend.authorName}' បានបញ្ចេញមតិ៖ "${commentToSend.text.substring(0, 40)}..."`,
+      type: "comment",
+      createdAt: new Date().toISOString(),
+      isRead: false
+    });
+
+    res.json({ success: true, activity: commentToSend });
+  } catch (err: any) {
+    console.error("Activity simulation error:", err);
+    res.status(500).json({ error: "Failed to simulate activity: " + err.message });
+  }
+});
+
+function getBackupFilename() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `backup_${year}-${month}-${day}_${hours}-${minutes}.sql`;
+}
+
+function formatTelegramCaption(filename: string, filePath: string, sizeInBytes?: number) {
+  let dateStr = "";
+  let timeStr = "";
+  let sizeStr = "Unknown";
+
+  try {
+    let size = sizeInBytes;
+    if (size === undefined) {
+      const stats = fs.statSync(filePath);
+      size = stats.size;
+    }
+    const sizeInMB = size / (1024 * 1024);
+    sizeStr = `${sizeInMB.toFixed(1)} MB`;
+    
+    const match = filename.match(/backup_(\d{4}-\d{2}-\d{2})_(\d{2})-(\d{2})/);
+    if (match) {
+      dateStr = match[1];
+      timeStr = `${match[2]}:${match[3]}`;
+    } else {
+      const now = new Date();
+      dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+  } catch (err: any) {
+    const now = new Date();
+    dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  }
+
+  return [
+    `⬇️ System Backup`,
+    ``,
+    `🗄️ Database: local.db`,
+    `📄 File: ${filename}`,
+    `📅 Date: ${dateStr} ${timeStr}`,
+    `📦 Size: ${sizeStr}`,
+    ``,
+    `Backup file saved on server. Download from Admin Panel → Backup & Restore.`
+  ].join("\n");
+}
+
+app.get("/api/backup/list", requireAuth, async (req, res) => {
+  try {
+    const backupsDir = getBackupsDir();
+    const files = fs.readdirSync(backupsDir);
+    const list = files
+      .filter(f => f.startsWith("backup_") && f.endsWith(".sql"))
+      .map(f => {
+        const filePath = path.join(backupsDir, f);
+        const stats = fs.statSync(filePath);
+        return {
+          filename: f,
+          size: stats.size,
+          createdAt: stats.birthtime.toISOString()
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    res.json(list);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to list backups" });
+  }
+});
+
 async function exportDbToSqlFile(destPath: string) {
   const isRemoteDb = !!(process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("libsql:") || process.env.DATABASE_URL.startsWith("http")));
 
