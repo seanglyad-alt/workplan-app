@@ -1204,50 +1204,50 @@ export default function WorkPlan({
                   
                   /* Header styling */
                   #printable-area-plan h2 {
-                    font-size: 14px !important;
+                    font-size: 15px !important;
                     line-height: 1.2 !important;
                   }
                   #printable-area-plan h1 {
-                    font-size: 18px !important;
+                    font-size: 20px !important;
                     line-height: 1.2 !important;
                   }
                   #printable-area-plan p {
-                    font-size: 8.5px !important;
+                    font-size: 9px !important;
                   }
                   
                   /* Metadata row container override */
                   #printable-area-plan .print-metadata-row {
-                    padding: 3px 8px !important;
-                    gap: 6px !important;
-                    margin-bottom: 4px !important;
+                    padding: 4px 10px !important;
+                    gap: 8px !important;
+                    margin-bottom: 6px !important;
                   }
                   #printable-area-plan .print-metadata-row span {
-                    font-size: 7.5px !important;
+                    font-size: 8px !important;
                     margin-bottom: 1px !important;
                   }
                   #printable-area-plan .print-metadata-row div {
-                    font-size: 9px !important;
+                    font-size: 10px !important;
                   }
 
                   /* Table cells sizing and content overrides */
                   #printable-area-plan th {
-                    padding: 3px 5px !important;
-                    font-size: 8.5px !important;
+                    padding: 4px 6px !important;
+                    font-size: 9px !important;
                   }
                   .print-week-only td.print-time-cell {
-                    height: auto !important;
-                    padding: 2px !important;
+                    min-height: 44px !important;
+                    padding: 3px !important;
                   }
                   .print-month-weeks td.print-time-cell {
-                    height: auto !important;
-                    padding: 2px !important;
+                    min-height: 44px !important;
+                    padding: 3px !important;
                   }
                   .print-month-calendar.weeks-5 td {
-                    height: auto !important;
+                    min-height: 35px !important;
                     padding: 2px !important;
                   }
                   .print-month-calendar.weeks-6 td {
-                    height: auto !important;
+                    min-height: 30px !important;
                     padding: 2px !important;
                   }
                   
@@ -1256,100 +1256,100 @@ export default function WorkPlan({
                     overflow: hidden !important;
                   }
                   .print-month-calendar th {
-                    padding: 3px 5px !important;
-                    font-size: 8.5px !important;
+                    padding: 4px 6px !important;
+                    font-size: 9px !important;
                   }
                   #printable-area-plan td.font-mono {
-                    padding: 3px !important;
-                    font-size: 8.5px !important;
+                    padding: 4px !important;
+                    font-size: 9px !important;
                   }
                   
                   /* No Schedule / Lunch Break cells */
                   #printable-area-plan .print-no-schedule {
-                    padding: 1px !important;
+                    padding: 2px !important;
                     margin: 0 !important;
                   }
                   #printable-area-plan .print-no-schedule span {
-                    font-size: 7.5px !important;
+                    font-size: 8px !important;
                   }
                   #printable-area-plan .print-no-schedule svg {
-                    width: 9px !important;
-                    height: 9px !important;
-                    margin-top: 1px !important;
+                    width: 10px !important;
+                    height: 10px !important;
+                    margin-top: 2px !important;
                   }
                   #printable-area-plan .print-lunch-break {
-                    padding-top: 2px !important;
-                    padding-bottom: 2px !important;
-                    font-size: 8.5px !important;
+                    padding-top: 3px !important;
+                    padding-bottom: 3px !important;
+                    font-size: 9px !important;
                   }
                   
                   /* Item card container inside td */
                   #printable-area-plan td .print-item-card {
-                    padding: 2px 3px !important;
-                    border-radius: 3px !important;
+                    padding: 3px 4px !important;
+                    border-radius: 4px !important;
                   }
                   #printable-area-plan td .print-item-card .font-bold.text-\\[11px\\] {
-                    font-size: 8.5px !important;
-                    line-height: 1.1 !important;
+                    font-size: 9.5px !important;
+                    line-height: 1.15 !important;
                   }
                   #printable-area-plan td .print-item-card .text-\\[9\\.5px\\] {
-                    font-size: 7.5px !important;
-                    margin-top: 0.5px !important;
+                    font-size: 8px !important;
+                    margin-top: 1px !important;
                   }
                   #printable-area-plan td .print-item-card .text-\\[8px\\] {
-                    font-size: 6.5px !important;
-                    padding-top: 1px !important;
+                    font-size: 7px !important;
+                    padding-top: 2px !important;
                   }
                   
                   /* Widget boxes in bottom layout */
                   #printable-area-plan .print-performance-box {
-                    padding: 4px 8px !important;
-                    border-radius: 6px !important;
+                    padding: 5px 10px !important;
+                    border-radius: 8px !important;
                   }
                   #printable-area-plan .print-performance-box span {
-                    font-size: 7.5px !important;
+                    font-size: 8px !important;
                   }
                   #printable-area-plan .print-performance-box .text-xl {
-                    font-size: 13px !important;
+                    font-size: 14px !important;
                   }
                   #printable-area-plan .print-performance-summary {
-                    padding: 5px 8px !important;
-                    border-radius: 6px !important;
+                    padding: 6px 10px !important;
+                    border-radius: 8px !important;
                   }
                   
                   /* Manager comments and signature card overrides */
                   #printable-area-plan .print-comments-box {
-                    min-height: 50px !important;
-                    font-size: 8.5px !important;
-                    padding: 4px 8px !important;
+                    min-height: 60px !important;
+                    font-size: 9px !important;
+                    padding: 5px 8px !important;
                   }
                   #printable-area-plan .print-signature-box {
-                    height: 75px !important;
-                    padding: 4px 6px !important;
+                    height: 85px !important;
+                    padding: 5px 8px !important;
                   }
                   #printable-area-plan .print-signature-box span {
-                    font-size: 7.5px !important;
+                    font-size: 8px !important;
                   }
                   #printable-area-plan .print-signature-box .print-sig-line {
-                    height: 12px !important;
+                    height: 14px !important;
                   }
                   #printable-area-plan .print-signature-box div[class*="h-8"] {
-                    height: 12px !important;
-                    font-size: 9.5px !important;
+                    height: 14px !important;
+                    font-size: 10px !important;
                   }
                   #printable-area-plan .print-signature-box div[class*="h-6"] {
-                    height: 9px !important;
-                    font-size: 7.5px !important;
+                    height: 10px !important;
+                    font-size: 8px !important;
                   }
                   
                   /* Footer legend */
                   #printable-area-plan .print-footer-legend {
-                    padding-top: 3px !important;
-                    margin-top: 4px !important;
-                    font-size: 8px !important;
+                    padding-top: 4px !important;
+                    margin-top: 6px !important;
+                    font-size: 8.5px !important;
                     position: relative !important;
                     background: transparent !important;
-                    padding-bottom: 1px !important;
+                    padding-bottom: 2px !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
                   }
