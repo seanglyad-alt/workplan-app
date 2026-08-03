@@ -1332,16 +1332,12 @@ export default function WorkPlan({
                   
                   /* Footer legend */
                   #printable-area-plan .print-footer-legend {
-                    padding-top: 1px !important;
-                    margin-top: 1px !important;
+                    padding-top: 4px !important;
+                    margin-top: 6px !important;
                     font-size: 8.5px !important;
-                    position: fixed !important;
-                    bottom: 0 !important;
-                    left: 6mm !important;
-                    right: 6mm !important;
-                    background: white !important;
+                    position: relative !important;
+                    background: transparent !important;
                     padding-bottom: 2px !important;
-                    z-index: 100 !important;
                   }
                 }
                 
@@ -1755,10 +1751,10 @@ export default function WorkPlan({
 
                         return (
                           <div key={wkNum} className="space-y-6 print:space-y-0 print:m-0 print:p-0 print-week-wrapper">
-                            <div className="bg-white text-slate-900 border border-slate-200 rounded-2xl p-8 shadow-lg font-sans print-wrapper-card print-month-weeks flex flex-col justify-between min-h-[820px] print:min-h-0 print:border-none print:shadow-none print:p-0 print:m-0 print:space-y-1.5">
+                            <div className="bg-white text-slate-900 border border-slate-200 rounded-2xl p-8 shadow-lg space-y-6 print:border-none print:shadow-none print:p-0 print:m-0 print:space-y-1.5 font-sans print-wrapper-card print-month-weeks">
                               
                               {/* Header Panel */}
-                              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-5 border-b-2 border-slate-200 shrink-0 print:flex-row print:justify-between print:items-center print:pb-3">
+                              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-5 border-b-2 border-slate-200 print:flex-row print:justify-between print:items-center print:pb-3">
                                 <div className="flex items-center gap-3">
                                   {companyLogoUrl ? (
                                     <div className="w-14 h-14 flex items-center justify-center overflow-hidden rounded-xl bg-slate-100/50">
@@ -1786,7 +1782,7 @@ export default function WorkPlan({
                               </div>
                               
                               {/* CALENDAR BLOCK - DYNAMIC HEIGHT MIDDLE */}
-                              <div className="border border-slate-200 rounded-xl overflow-x-auto my-4 flex-1 print:my-2 print:border-none print:rounded-none">
+                              <div className="border border-slate-200 rounded-xl overflow-x-auto print:border-none print:rounded-none">
                                 <table className="w-full text-left border-collapse table-fixed min-w-[900px]">
                                   <thead>
                                     <tr className="bg-[#0b2545] text-white text-[11px] font-bold uppercase border-b-2 border-slate-200">
@@ -1863,93 +1859,90 @@ export default function WorkPlan({
                                 </table>
                               </div>
 
-                              {/* STATIC BOTTOM SECTION - ALWAYS ANCHORED AT BOTTOM EXACTLY LIKE IMAGE 2 */}
-                              <div className="shrink-0 space-y-4 pt-4 border-t border-slate-200 mt-auto">
-                                {/* Dynamics Bottom Stats */}
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left font-sans print:grid-cols-3 print:gap-4 print-bottom-row">
-                                  
-                                  {/* WEEKLY SUMMARY WIDGETS */}
-                                  <div className="lg:col-span-1 space-y-4">
-                                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-1 font-display">
-                                      WEEKLY PERFORMANCE
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-3 print:gap-2">
-                                      <div className="p-3 bg-blue-50 border border-blue-150 rounded-lg print:p-2 print:rounded-md print-performance-box">
-                                        <span className="text-blue-700 text-[10px] uppercase font-bold print:text-[8.5px]">Completion Rate</span>
-                                        <div className="text-xl font-black text-blue-955 font-display print:text-base">
-                                          {wkCompletionRate}%
-                                        </div>
-                                      </div>
-                                      <div className="p-3 bg-emerald-50 border border-emerald-150 rounded-lg print:p-2 print:rounded-md print-performance-box">
-                                        <span className="text-emerald-700 text-[10px] uppercase font-bold print:text-[8.5px]">Total Done</span>
-                                        <div className="text-xl font-black text-emerald-955 font-display print:text-base">{wkCompletedTasks}</div>
+                              {/* Dynamics Bottom Stats */}
+                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-6 border-t border-slate-200 text-left font-sans print:grid-cols-3 print:gap-4 print:pt-2.5 print:mt-2.5 print-bottom-row">
+                                
+                                {/* WEEKLY SUMMARY WIDGETS */}
+                                <div className="lg:col-span-1 space-y-4">
+                                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-1 font-display">
+                                    WEEKLY PERFORMANCE
+                                  </h3>
+                                  <div className="grid grid-cols-2 gap-3 print:gap-2">
+                                    <div className="p-3 bg-blue-50 border border-blue-150 rounded-lg print:p-2 print:rounded-md print-performance-box">
+                                      <span className="text-blue-700 text-[10px] uppercase font-bold print:text-[8.5px]">Completion Rate</span>
+                                      <div className="text-xl font-black text-blue-955 font-display print:text-base">
+                                        {wkCompletionRate}%
                                       </div>
                                     </div>
-                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 print:p-2.5 print:rounded-lg print:space-y-1 print-performance-summary">
-                                       <div className="flex justify-between text-xs">
-                                         <span className="text-slate-500 font-medium">Week Plan:</span>
-                                         <span className="font-bold text-slate-900">{wkRangeLabel.range}</span>
-                                       </div>
-                                       <div className="flex justify-between text-xs">
-                                         <span className="text-slate-500 font-medium">Report Type:</span>
-                                         <span className="font-bold text-slate-900 uppercase">WEEKLY GLOBAL</span>
-                                       </div>
+                                    <div className="p-3 bg-emerald-50 border border-emerald-150 rounded-lg print:p-2 print:rounded-md print-performance-box">
+                                      <span className="text-emerald-700 text-[10px] uppercase font-bold print:text-[8.5px]">Total Done</span>
+                                      <div className="text-xl font-black text-emerald-955 font-display print:text-base">{wkCompletedTasks}</div>
                                     </div>
                                   </div>
-
-                                  {/* MANAGER COMMENTS AREA */}
-                                  <div className="lg:col-span-1 space-y-4">
-                                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-1 font-display">
-                                      MANAGER COMMENTS
-                                    </h3>
-                                    <div className="text-xs text-slate-800 leading-relaxed font-sans bg-slate-50 p-4 border border-slate-200 rounded-xl min-h-[120px] print:p-2.5 print:min-h-[75px] print:text-[9.5px] print-comments-box">
-                                      {managerComments}
-                                    </div>
+                                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 print:p-2.5 print:rounded-lg print:space-y-1 print-performance-summary">
+                                     <div className="flex justify-between text-xs">
+                                       <span className="text-slate-500 font-medium">Week Plan:</span>
+                                       <span className="font-bold text-slate-900">{wkRangeLabel.range}</span>
+                                     </div>
+                                     <div className="flex justify-between text-xs">
+                                       <span className="text-slate-500 font-medium">Report Type:</span>
+                                       <span className="font-bold text-slate-900 uppercase">WEEKLY GLOBAL</span>
+                                     </div>
                                   </div>
+                                </div>
 
-                                  {/* SIGNATURE BLOCK */}
-                                  <div className="lg:col-span-1 space-y-4">
-                                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-1 font-display">
-                                      SIGNATURES
-                                    </h3>
-                                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-6 flex flex-col justify-between h-[165px] print:p-2.5 print:space-y-3 print:h-[110px] print-signature-box">
-                                      <div>
-                                        <span className="text-[10px] text-slate-400 font-bold block mb-1">Approved by Manager:</span>
-                                        <div className="h-8 border-b border-dashed border-slate-300 flex items-end justify-center select-none pb-1 print:h-6 print:pb-0.5 print-sig-line">
-                                          <span className="font-serif text-sm italic text-blue-800 tracking-wider"></span>
+                                {/* MANAGER COMMENTS AREA */}
+                                <div className="lg:col-span-1 space-y-4">
+                                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-1 font-display">
+                                    MANAGER COMMENTS
+                                  </h3>
+                                  <div className="text-xs text-slate-800 leading-relaxed font-sans bg-slate-50 p-4 border border-slate-200 rounded-xl min-h-[120px] print:p-2.5 print:min-h-[75px] print:text-[9.5px] print-comments-box">
+                                    {managerComments}
+                                  </div>
+                                </div>
+
+                                {/* SIGNATURE BLOCK */}
+                                <div className="lg:col-span-1 space-y-4">
+                                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-200 pb-1 font-display">
+                                    SIGNATURES
+                                  </h3>
+                                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-6 flex flex-col justify-between h-[165px] print:p-2.5 print:space-y-3 print:h-[110px] print-signature-box">
+                                    <div>
+                                      <span className="text-[10px] text-slate-400 font-bold block mb-1">Approved by Manager:</span>
+                                      <div className="h-8 border-b border-dashed border-slate-300 flex items-end justify-center select-none pb-1 print:h-6 print:pb-0.5 print-sig-line">
+                                        <span className="font-serif text-sm italic text-blue-800 tracking-wider"></span>
+                                      </div>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                      <div className="flex-1">
+                                        <span className="text-[10px] text-slate-400 font-bold block mb-1">Date:</span>
+                                        <div className="h-6 border-b border-dashed border-slate-300 font-mono text-[10px] text-center print:h-5 print-sig-line">
+                                          {generationDate}
                                         </div>
                                       </div>
-                                      <div className="flex justify-between items-end">
-                                        <div className="flex-1">
-                                          <span className="text-[10px] text-slate-400 font-bold block mb-1">Date:</span>
-                                          <div className="h-6 border-b border-dashed border-slate-300 font-mono text-[10px] text-center print:h-5 print-sig-line">
-                                            {generationDate}
-                                          </div>
-                                        </div>
-                                        <div className="flex-1 ml-4 text-center">
-                                          <span className="text-[10px] text-slate-400 font-bold block mb-1">Official Seal:</span>
-                                          <div className="h-6 flex items-center justify-center opacity-20">
-                                            <CheckCircle2 className="w-5 h-5 mx-auto" />
-                                          </div>
+                                      <div className="flex-1 ml-4 text-center">
+                                        <span className="text-[10px] text-slate-400 font-bold block mb-1">Official Seal:</span>
+                                        <div className="h-6 flex items-center justify-center opacity-20">
+                                          <CheckCircle2 className="w-5 h-5 mx-auto" />
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
+                              </div>
 
-                                {/* Footer Legend */}
-                                <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 border-t border-slate-200 pt-2 print:pt-1 print:text-[9px] print-footer-legend">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-bold">Legend:</span>
-                                    <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Planned</span>
-                                    <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> In Progress</span>
-                                    <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Completed</span>
-                                    <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Overdue</span>
-                                    <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-slate-400" /> Cancelled</span>
-                                  </div>
-                                  <div className="font-medium">
-                                    Note: Page X of Y • Document system authorized.
-                                  </div>
+                              {/* Footer Legend */}
+                              <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 border-t border-slate-200 pt-2 print:pt-1 print:text-[9px] print-footer-legend">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-bold">Legend:</span>
+                                  <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-blue-500" /> Planned</span>
+                                  <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> In Progress</span>
+                                  <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Completed</span>
+                                  <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Overdue</span>
+                                  <span className="inline-flex items-center gap-0.5"><span className="w-2 h-2 rounded-full bg-slate-400" /> Cancelled</span>
+                                </div>
+                                <div className="font-medium">
+                                  Note: Page X of Y • Document system authorized.
                                 </div>
                               </div>
                             </div>
