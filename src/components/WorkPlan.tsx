@@ -2677,15 +2677,19 @@ export default function WorkPlan({
                         </div>
                         {daysOfWeek.map((day, dIdx) => {
                           const fullDate = getWeekRangeLabel(selectedWeek).dates[dIdx] || "00/00/0000";
+                          const parts = fullDate.split("/");
+                          const dayNum = parts[0] || "";
+                          const monthYear = parts.length > 1 ? `/${parts.slice(1).join("/")}` : "";
 
                           return (
-                            <div key={day.key} className="space-y-1 font-sans p-1 text-center">
-                              <span className="text-sm font-black text-white block tracking-wide">
+                            <div key={day.key} className="space-y-0.5 font-sans p-1 text-center select-none">
+                              <span className="text-xs font-bold text-slate-200 block tracking-wide">
                                 {day.kh.split(" ")[0]}
                               </span>
-                              <span className="text-sm font-black font-mono text-amber-300 block tracking-tight">
-                                {fullDate}
-                              </span>
+                              <div className="text-sm font-black font-mono inline-flex items-center justify-center tracking-tight">
+                                <span className="text-amber-300 font-black text-base drop-shadow-[0_0_6px_rgba(252,211,77,0.4)]">{dayNum}</span>
+                                <span className="text-white font-bold text-xs">{monthYear}</span>
+                              </div>
                             </div>
                           );
                         })}
