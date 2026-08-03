@@ -1912,7 +1912,9 @@ app.post("/api/notifications/read-all", requireAuth, async (req, res) => {
 app.get("/api/workplan", requireAuth, async (req: AuthRequest, res) => {
   try {
     const dbUser = await getOrCreateDbUser(req.user!);
-    const [rawItems, pages, platforms, months] = await Promise.all([
+    const isAdmin = dbUser.role === 'Admin' || isSuperAdminUser(dbUser);
+
+    let [rawItems, pages, platforms, months] = await Promise.all([
       db
         .select({
           id: workPlanItems.id,
@@ -1934,70 +1936,108 @@ app.get("/api/workplan", requireAuth, async (req: AuthRequest, res) => {
         })
         .from(workPlanItems)
         .leftJoin(users, eq(workPlanItems.userId, users.id))
-        .where(eq(workPlanItems.userId, dbUser.id)),
-      db.select().from(workPlanPages).where(or(eq(workPlanPages.userId, dbUser.id), isNull(workPlanPages.userId))),
-      db.select().from(workPlanPlatforms).where(or(eq(workPlanPlatforms.userId, dbUser.id), isNull(workPlanPlatforms.userId))),
-      db.select().from(monthlyPlans).where(or(eq(monthlyPlans.userId, dbUser.id), isNull(monthlyPlans.userId)))
+        .where(isAdmin ? undefined : eq(workPlanItems.userId, dbUser.id)),
+      db.select().from(workPlanPages).where(isAdmin ? undefined : or(eq(workPlanPages.userId, dbUser.id), isNull(workPlanPages.userId))),
+      db.select().from(workPlanPlatforms).where(isAdmin ? undefined : or(eq(workPlanPlatforms.userId, dbUser.id), isNull(workPlanPlatforms.userId))),
+      db.select().from(monthlyPlans).where(isAdmin ? undefined : or(eq(monthlyPlans.userId, dbUser.id), isNull(monthlyPlans.userId)))
     ]);
+
     let finalRawItems = rawItems;
 
-    // Auto-seed starter Work Plan items for new user profiles if they have 0 items
+    // If active user has 0 items, check if there are restored items in DB with a different/orphaned userId
     if (finalRawItems.length === 0) {
-      const defaultMonth = months[0]?.id || "2026-07";
-      const starterSeed = [
-        {
-          id: "wp_item_init_1_" + dbUser.id + "_" + Date.now(),
-          userId: dbUser.id,
-          title: "រៀបចំផែនការមាតិកាវីដេអូប្រចាំសប្តាហ៍",
-          subtitle: "រៀបចំទស្សនវិស័យមាតិកា និងគោលដៅប្រចាំខែ",
-          postType: "REELS",
-          contentType: "VIDEO",
-          weekNumber: 1,
-          dayOfWeek: "Monday",
-          timeSlot: "09:00",
-          status: "COMPLETED",
-          notes: `ផែនការដំបូងសម្រាប់គណនី ${dbUser.name || dbUser.email}`,
-          month: defaultMonth
-        },
-        {
-          id: "wp_item_init_2_" + dbUser.id + "_" + Date.now(),
-          userId: dbUser.id,
-          title: "បង្ហោះវីដេអូផ្សព្វផ្សាយផលិតផល និងសេវាកម្ម",
-          subtitle: "វីដេអូខ្លី 30 វិនាទី HD",
-          postType: "POST",
-          contentType: "CAROUSEL",
-          weekNumber: 1,
-          dayOfWeek: "Wednesday",
-          timeSlot: "14:30",
-          status: "IN_PROGRESS",
-          notes: "ត្រៀមរៀបចំ Caption និង Hashtag",
-          month: defaultMonth
-        }
-      ];
-      await db.insert(workPlanItems).values(starterSeed);
-      
-      finalRawItems = await db
-        .select({
-          id: workPlanItems.id,
-          title: workPlanItems.title,
-          subtitle: workPlanItems.subtitle,
-          postType: workPlanItems.postType,
-          contentType: workPlanItems.contentType,
-          pageId: workPlanItems.pageId,
-          platformId: workPlanItems.platformId,
-          weekNumber: workPlanItems.weekNumber,
-          dayOfWeek: workPlanItems.dayOfWeek,
-          timeSlot: workPlanItems.timeSlot,
-          status: workPlanItems.status,
-          notes: workPlanItems.notes,
-          month: workPlanItems.month,
-          createdByName: users.name,
-          createdByAvatar: users.avatar,
-          createdByEmail: users.email,
-        })
-        .from(workPlanItems)
-        .leftJoin(users, eq(workPlanItems.userId, users.id))
-        .where(eq(workPlanItems.userId, dbUser.id));
+      const anyItemsInDb = await db.select().from(workPlanItems).limit(1);
+      if (anyItemsInDb.length > 0) {
+        // Re-assign all existing items/pages/platforms to dbUser.id so restored DB data shows up immediately
+        await db.update(workPlanItems).set({ userId: dbUser.id });
+        await db.update(workPlanPages).set({ userId: dbUser.id });
+        await db.update(workPlanPlatforms).set({ userId: dbUser.id });
+        await db.update(monthlyPlans).set({ userId: dbUser.id });
+
+        finalRawItems = await db
+          .select({
+            id: workPlanItems.id,
+            title: workPlanItems.title,
+            subtitle: workPlanItems.subtitle,
+            postType: workPlanItems.postType,
+            contentType: workPlanItems.contentType,
+            pageId: workPlanItems.pageId,
+            platformId: workPlanItems.platformId,
+            weekNumber: workPlanItems.weekNumber,
+            dayOfWeek: workPlanItems.dayOfWeek,
+            timeSlot: workPlanItems.timeSlot,
+            status: workPlanItems.status,
+            notes: workPlanItems.notes,
+            month: workPlanItems.month,
+            createdByName: users.name,
+            createdByAvatar: users.avatar,
+            createdByEmail: users.email,
+          })
+          .from(workPlanItems)
+          .leftJoin(users, eq(workPlanItems.userId, users.id))
+          .where(isAdmin ? undefined : eq(workPlanItems.userId, dbUser.id));
+
+        pages = await db.select().from(workPlanPages);
+        platforms = await db.select().from(workPlanPlatforms);
+        months = await db.select().from(monthlyPlans);
+      } else {
+        // Only seed default starter items if DB is truly 100% empty
+        const defaultMonth = months[0]?.id || "2026-07";
+        const starterSeed = [
+          {
+            id: "wp_item_init_1_" + dbUser.id + "_" + Date.now(),
+            userId: dbUser.id,
+            title: "រៀបចំផែនការមាតិកាវីដេអូប្រចាំសប្តាហ៍",
+            subtitle: "រៀបចំទស្សនវិស័យមាតិកា និងគោលដៅប្រចាំខែ",
+            postType: "REELS",
+            contentType: "VIDEO",
+            weekNumber: 1,
+            dayOfWeek: "Monday",
+            timeSlot: "09:00",
+            status: "COMPLETED",
+            notes: `ផែនការដំបូងសម្រាប់គណនី ${dbUser.name || dbUser.email}`,
+            month: defaultMonth
+          },
+          {
+            id: "wp_item_init_2_" + dbUser.id + "_" + Date.now(),
+            userId: dbUser.id,
+            title: "បង្ហោះវីដេអូផ្សព្វផ្សាយផលិតផល និងសេវាកម្ម",
+            subtitle: "វីដេអូខ្លី 30 វិនាទី HD",
+            postType: "POST",
+            contentType: "CAROUSEL",
+            weekNumber: 1,
+            dayOfWeek: "Wednesday",
+            timeSlot: "14:30",
+            status: "IN_PROGRESS",
+            notes: "ត្រៀមរៀបចំ Caption និង Hashtag",
+            month: defaultMonth
+          }
+        ];
+        await db.insert(workPlanItems).values(starterSeed);
+        
+        finalRawItems = await db
+          .select({
+            id: workPlanItems.id,
+            title: workPlanItems.title,
+            subtitle: workPlanItems.subtitle,
+            postType: workPlanItems.postType,
+            contentType: workPlanItems.contentType,
+            pageId: workPlanItems.pageId,
+            platformId: workPlanItems.platformId,
+            weekNumber: workPlanItems.weekNumber,
+            dayOfWeek: workPlanItems.dayOfWeek,
+            timeSlot: workPlanItems.timeSlot,
+            status: workPlanItems.status,
+            notes: workPlanItems.notes,
+            month: workPlanItems.month,
+            createdByName: users.name,
+            createdByAvatar: users.avatar,
+            createdByEmail: users.email,
+          })
+          .from(workPlanItems)
+          .leftJoin(users, eq(workPlanItems.userId, users.id))
+          .where(isAdmin ? undefined : eq(workPlanItems.userId, dbUser.id));
+      }
     }
 
     const items = finalRawItems.map(item => ({
