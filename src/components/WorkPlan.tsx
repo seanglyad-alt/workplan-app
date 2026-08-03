@@ -683,6 +683,7 @@ export default function WorkPlan({
           const res = await fetchWithAuth(`/api/workplan/items/${itemId}`, { method: "DELETE" });
           if (!res.ok) throw new Error("មិនអាចលុបបានឡើយ!");
           setItems(prev => prev.filter(i => i.id !== itemId));
+          setSelectedItem(null);
           if (onRefreshStats) onRefreshStats();
         } catch (err: any) {
           setAlertMsg(err.message);

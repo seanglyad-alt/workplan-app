@@ -1,6 +1,7 @@
 import path from "path";
 import os from "os";
 import fs from "fs";
+import { execSync } from "child_process";
 
 export function getAppDataDir(): string {
   if (process.env.APP_DATA_DIR) {
@@ -87,7 +88,6 @@ export function getDbPath(): string {
           // Seed.db has been updated since last sync - perform a quick merge
           // We do this synchronously using better-sqlite3 or by spawning a child process
           // For safety we just do a full replacement if current DB has very few work_plan_items
-          const { execSync } = require("child_process");
           const nodeExec = process.execPath;
           
           // Quick check: count items in current DB using sqlite3 CLI or native node
