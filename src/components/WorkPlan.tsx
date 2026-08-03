@@ -411,7 +411,7 @@ export default function WorkPlan({
           const monthItems = (data.items || []).filter((i: any) => i.month === monthWithMostItems.id || (!i.month && monthWithMostItems.id === "2026-06"));
           const firstWeekWithItems = monthItems.find((i: any) => i.weekNumber !== undefined)?.weekNumber;
           if (firstWeekWithItems && firstWeekWithItems >= 1 && firstWeekWithItems <= 5) {
-            setSelectedWeekNumber(firstWeekWithItems);
+            setSelectedWeek(firstWeekWithItems);
           }
         } else {
           const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
