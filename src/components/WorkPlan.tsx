@@ -2586,9 +2586,10 @@ export default function WorkPlan({
               {/* RIGHT MAIN CALENDAR GRID & WEEK PLAN CHOOSER (Col 12 - Full Width!) */}
               <div className="lg:col-span-12 space-y-2.5">
                 
-                {/* 1. WEEK SELECTION TAB CONTROLLERS */}
-                <div className="sticky top-[64px] z-30 backdrop-blur-md bg-[#111115]/95 print-hide print:hidden flex flex-col xl:flex-row justify-between items-stretch xl:items-center p-2.5 border border-white/[0.08] rounded-2xl gap-3 shadow-xl">
-                  <div className="flex items-center gap-1 sm:gap-1.5 font-sans w-full flex-1">
+                {/* 1. WEEK SELECTION TAB CONTROLLERS & VIEW TOGGLES */}
+                <div className="sticky top-[64px] z-30 backdrop-blur-md bg-[#111115]/95 print-hide print:hidden flex flex-col lg:flex-row justify-between items-center p-2.5 border border-white/[0.08] rounded-2xl gap-2.5 shadow-xl max-w-full overflow-hidden">
+                  {/* Week Buttons - Dynamic Auto-Resize */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 font-sans w-full lg:flex-1 min-w-0">
                     {getWeeksForMonth(selectedMonthId).map((wk) => {
                       const wkRangeLabel = getWeekRangeLabel(wk, selectedMonthId);
                       const weekColors: Record<number, { active: string; inactive: string; icon: string }> = {
@@ -2616,25 +2617,26 @@ export default function WorkPlan({
                     })}
                   </div>
 
-                  {/* View modes Toggle */}
-                  <div className="flex gap-1 bg-[#16161a] p-0.5 border border-white/[0.06] rounded-lg overflow-x-auto no-scrollbar flex-nowrap shrink-0">
+                  {/* View Modes Toggle - Fits perfectly without overflow */}
+                  <div className="flex items-center gap-1 bg-[#16161a] p-1 border border-white/[0.06] rounded-xl w-full lg:w-auto shrink-0 justify-between lg:justify-end overflow-hidden max-w-full">
                     {[
-                      { key: "calendar", label: "មើលប្រតិទិន (Standard View)" },
-                      { key: "month-calendar", label: "ប្រតិទិនប្រចាំខែ (Monthly View)" },
-                      { key: "list", label: "មើលបញ្ជី (List View)" },
-                      { key: "datagrid", label: "មើលតារាងទិន្នន័យ (Grid View)" }
+                      { key: "calendar", label: "មើលប្រតិទិន (Standard View)", short: "Standard" },
+                      { key: "month-calendar", label: "ប្រតិទិនប្រចាំខែ (Monthly View)", short: "Monthly" },
+                      { key: "list", label: "មើលបញ្ជី (List View)", short: "List" },
+                      { key: "datagrid", label: "មើលតារាងទិន្នន័យ (Grid View)", short: "Grid" }
                     ].map(tab => (
                       <button
                         key={tab.key}
                         type="button"
                         onClick={() => setSelectedTab(tab.key as any)}
-                        className={`text-[10px] px-2.5 py-1.5 rounded border transition-all cursor-pointer font-sans font-semibold whitespace-nowrap shrink-0 ${
+                        className={`flex-1 lg:flex-none text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-sans font-bold text-center whitespace-nowrap ${
                           selectedTab === tab.key
-                            ? "bg-violet-500/20 border-violet-500/30 text-violet-300 font-bold"
+                            ? "bg-violet-500/20 border-violet-500/40 text-violet-300 shadow-sm"
                             : "bg-transparent border-transparent text-slate-400 hover:text-slate-200"
                         }`}
                       >
-                        {tab.label}
+                        <span className="hidden xl:inline">{tab.label}</span>
+                        <span className="xl:hidden">{tab.short}</span>
                       </button>
                     ))}
                   </div>
