@@ -397,12 +397,21 @@ export default function WorkPlan({
       if (data.pages && data.pages.length > 0) setFormPageId(data.pages[0].id);
       if (data.platforms && data.platforms.length > 0) setFormPlatformId(data.platforms[0].id);
 
-      // Select active month if none is loaded
+      // Select active month: prioritize month with items, or IN_PROGRESS month
       if (data.months && data.months.length > 0) {
-        const alreadySelectedExists = data.months.some((m: any) => m.id === selectedMonthId);
-        if (!alreadySelectedExists) {
-          const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
-          if (defaultActive) setSelectedMonthId(defaultActive.id);
+        const monthWithMostItems = data.months.reduce((best: any, m: any) => {
+          const count = (data.items || []).filter((i: any) => i.month === m.id || (!i.month && m.id === "2026-06")).length;
+          return count > (best.count || 0) ? { id: m.id, count } : best;
+        }, { id: "", count: 0 });
+
+        if (monthWithMostItems.id && monthWithMostItems.count > 0) {
+          setSelectedMonthId(monthWithMostItems.id);
+        } else {
+          const alreadySelectedExists = data.months.some((m: any) => m.id === selectedMonthId);
+          if (!alreadySelectedExists) {
+            const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
+            if (defaultActive) setSelectedMonthId(defaultActive.id);
+          }
         }
       }
       setError(null);
