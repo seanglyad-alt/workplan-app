@@ -2749,27 +2749,21 @@ export default function WorkPlan({
                                               e.stopPropagation();
                                               setViewingDetailItem(item);
                                             }}
-                                            className={`p-2 text-[9.5px] leading-snug rounded-xl border-[1.5px] cursor-grab active:cursor-grabbing ${colStyles.bg} ${colStyles.border} ${colStyles.text} block hover:scale-[1.02] transition-transform shadow-md space-y-1.5`}
+                                            className={`p-1.5 text-[9px] leading-tight rounded-lg border-[1.5px] cursor-grab active:cursor-grabbing ${colStyles.bg} ${colStyles.border} ${colStyles.text} block hover:scale-[1.02] transition-transform`}
                                           >
-                                            <span className="font-extrabold line-clamp-2 block leading-snug">{item.title}</span>
+                                            <span className="font-extrabold line-clamp-2 block leading-none">{item.title}</span>
                                             
                                             {pageName && (
-                                              <span className="text-[8.5px] text-cyan-300 font-semibold truncate block flex items-center gap-1 bg-cyan-950/40 border border-cyan-500/30 px-1.5 py-0.5 rounded-md w-fit max-w-full">
-                                                <span className="opacity-70">📄</span> <span className="truncate">{pageName}</span>
-                                              </span>
+                                              <span className="text-[8px] text-cyan-300 font-semibold truncate block mt-0.5">{pageName}</span>
                                             )}
 
-                                            <div className="flex items-center justify-between gap-1 text-[8px] font-mono uppercase font-bold pt-0.5">
-                                              <span className={`px-1.5 py-0.5 rounded-md border flex items-center gap-0.5 ${cStyle.bg} ${cStyle.text} ${cStyle.border}`}>
-                                                <span>{cStyle.icon}</span> <span>{cStyle.label}</span>
-                                              </span>
-                                              <span className={`px-1.5 py-0.5 rounded-md border font-black ${pTypeStyle.bg} ${pTypeStyle.text} ${pTypeStyle.border}`}>
-                                                {item.postType}
-                                              </span>
+                                            <div className="flex justify-between items-center text-[7.5px] mt-1 font-mono uppercase tracking-tight">
+                                              <span className={cStyle.text}>{item.contentType}</span>
+                                              <span className={pTypeStyle.text}>{item.postType}</span>
                                             </div>
 
                                             {item.platformId && (
-                                              <div className="mt-1 flex flex-wrap gap-1 border-t border-white/[0.08] pt-1">
+                                              <div className="mt-1 flex flex-wrap gap-1.5 border-t border-white/[0.06] pt-1">
                                                 {item.platformId.split(",").map(pId => {
                                                   const plat = platforms.find(pf => pf.id === pId);
                                                   const pName = plat ? plat.name : pId;
@@ -2777,7 +2771,7 @@ export default function WorkPlan({
                                                   return (
                                                     <span 
                                                       key={pId} 
-                                                      className={`px-1.5 py-0.5 text-[7.5px] font-sans font-black rounded-md border shadow-sm truncate max-w-[70px] ${pStyle.badge}`} 
+                                                      className={`text-[7.5px] font-sans font-black ${pStyle.text}`} 
                                                       title={pName}
                                                     >
                                                       {pName}
