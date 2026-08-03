@@ -115,6 +115,15 @@ export interface PageSettings {
   telegramChatId?: string;
   lastBackupTime?: string | null;
   backupTime?: string;
+  developerName?: string;
+  developerTelegramLink?: string;
+  footerAppName?: string;
+  footerCopyrightText?: string;
+  footerBadge1?: string;
+  footerBadge2?: string;
+  footerShowClock?: boolean;
+  footerShowDate?: boolean;
+  footerIsSticky?: boolean;
 }
 
 export interface WorkPlanItem {

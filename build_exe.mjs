@@ -67,19 +67,19 @@ async function createIcoFile(pngPath, icoPath) {
   }
 }
 
-async function patchBaseBinaryWithIcon(releaseDir, sourceIcon) {
+async function embedIconIntoExe(exePath, icoPath) {
   try {
-    const baseBin = path.join(os.homedir(), ".pkg-cache", "v3.4", "fetched-v18.5.0-win-x64");
-    if (!fs.existsSync(baseBin) || !fs.existsSync(sourceIcon)) return;
+    if (!fs.existsSync(icoPath)) {
+      console.warn("[WARN] Icon file not found:", icoPath);
+      return;
+    }
 
-    console.log("\n[INFO] Patching base Node binary with custom icon...");
-    const icoPath = path.join(releaseDir, "icon.ico");
-    await createIcoFile(sourceIcon, icoPath);
+    console.log("\n[4/5] Embedding custom icon into final .exe...");
 
     const ResEditModule = await import("resedit");
     const ResEdit = ResEditModule.default || ResEditModule;
 
-    const exeBuf = fs.readFileSync(baseBin);
+    const exeBuf = fs.readFileSync(exePath);
     const exe = ResEdit.NtExecutable.from(exeBuf);
     const res = ResEdit.NtExecutableResource.from(exe);
 
@@ -95,18 +95,10 @@ async function patchBaseBinaryWithIcon(releaseDir, sourceIcon) {
 
     res.outputResource(exe);
     const newBuf = Buffer.from(exe.generate());
-    fs.writeFileSync(baseBin, newBuf);
-
-    const sha256 = crypto.createHash("sha256").update(newBuf).digest("hex");
-    const shasJsonPath = path.join(__dirname, "node_modules", "@yao-pkg", "pkg-fetch", "lib-es5", "expected-shas.json");
-    if (fs.existsSync(shasJsonPath)) {
-      const shas = JSON.parse(fs.readFileSync(shasJsonPath, "utf8"));
-      shas["m48-v18.5.0-win-x64"] = sha256;
-      fs.writeFileSync(shasJsonPath, JSON.stringify(shas, null, 2));
-    }
-    console.log("[SUCCESS] Embedded custom multi-res icon into base Node runtime binary.");
+    fs.writeFileSync(exePath, newBuf);
+    console.log("[SUCCESS] Custom icon embedded into Facebook-Scheduler.exe!");
   } catch (err) {
-    console.warn("[WARN] Base icon patching skipped:", err.message);
+    console.warn("[WARN] Icon embedding skipped:", err.message);
   }
 }
 
@@ -140,14 +132,20 @@ async function runBuild() {
     const nodeBin = process.execPath;
     const viteBin = path.join(__dirname, "node_modules", "vite", "bin", "vite.js");
     const pkgBin = path.join(__dirname, "node_modules", "pkg", "lib-es5", "bin.js");
-    const sourceIcon = path.join(__dirname, "release", "icon.png");
+    const sourceIconPng = path.join(__dirname, "release", "icon.png");
+    const sourceIconIco = path.join(__dirname, "release", "icon.ico");
+    // Use .ico directly if no .png available
+    const sourceIcon = fs.existsSync(sourceIconPng) ? sourceIconPng : null;
+    const icoForEmbed = sourceIconIco; // always use .ico for embedding
 
     // Copy icon to public dir for favicon
     const publicDir = path.join(__dirname, "public");
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-    if (fs.existsSync(sourceIcon)) {
+    if (sourceIcon && fs.existsSync(sourceIcon)) {
       fs.copyFileSync(sourceIcon, path.join(publicDir, "icon.png"));
-      fs.copyFileSync(sourceIcon, path.join(publicDir, "favicon.ico"));
+    }
+    if (fs.existsSync(icoForEmbed)) {
+      fs.copyFileSync(icoForEmbed, path.join(publicDir, "favicon.ico"));
     }
 
     // Step 1: Vite Build
@@ -201,10 +199,7 @@ async function runBuild() {
       try { fs.unlinkSync(oldExePath); } catch (e) {}
     }
 
-    // Step 3: Embed Icon into Base Runtime Binary
-    await patchBaseBinaryWithIcon(releaseDir, sourceIcon);
-
-    // Step 4: Packaging into single .exe with pkg
+    // Step 3: Packaging into single .exe with pkg
     console.log("\n[3/5] Packaging into single .exe with pkg...");
 
     const pkgConfig = {
@@ -234,10 +229,11 @@ async function runBuild() {
     // Patch PE header to GUI mode for silent execution
     makeExeGuiSilent(singleExePath);
 
-    // Step 5: Create Icon & Windows Shortcut
-    if (fs.existsSync(sourceIcon)) {
-      const icoPath = path.join(releaseDir, "icon.ico");
-      await createIcoFile(sourceIcon, icoPath);
+    // Step 4: Embed icon directly into the final .exe (AFTER pkg, most reliable)
+    await embedIconIntoExe(singleExePath, icoForEmbed);
+
+    // Step 5: Create Windows Shortcut with icon
+    if (fs.existsSync(icoForEmbed)) {
       createDesktopShortcut(releaseDir);
     }
 

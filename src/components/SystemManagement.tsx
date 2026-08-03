@@ -5,7 +5,7 @@ import {
   AlertTriangle, Download, Upload, Server, Cpu, HardDrive, Activity,
   Eye, EyeOff, Search, BarChart2, Settings, Globe, FileText, Layers,
   Check, Send, Wifi, RotateCcw, Key, BellOff, Lock, ArrowLeft,
-  Sliders, Grid, CheckSquare, Square, Info
+  Sliders, Grid, CheckSquare, Square, Info, ExternalLink, Code2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { fetchWithAuth } from "../lib/api.ts";
@@ -85,6 +85,11 @@ interface PageSetting {
   isAutoResponderEnabled?: boolean; backupSchedule?: string;
   isTelegramBackupEnabled?: boolean; telegramBotToken?: string; telegramChatId?: string;
   backupTime?: string; lastBackupTime?: string;
+  developerName?: string; developerTelegramLink?: string;
+  footerAppName?: string; footerCopyrightText?: string;
+  footerBadge1?: string; footerBadge2?: string;
+  footerShowClock?: boolean; footerShowDate?: boolean;
+  footerIsSticky?: boolean;
 }
 
 /* ──────────────────────────────────────────────── */
@@ -135,6 +140,16 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
   const [stTelegramToken, setStTelegramToken] = useState("");
   const [stTelegramChatId, setStTelegramChatId] = useState("");
   const [stBackupTime, setStBackupTime] = useState("03:00");
+  const [stDeveloperName, setStDeveloperName] = useState("");
+  const [stDeveloperTelegramLink, setStDeveloperTelegramLink] = useState("");
+  // Footer customization
+  const [stFooterAppName, setStFooterAppName] = useState("Facebook Video Scheduler");
+  const [stFooterCopyrightText, setStFooterCopyrightText] = useState("រក្សាសិទ្ធិគ្រប់យ៉ាង។");
+  const [stFooterBadge1, setStFooterBadge1] = useState("ការផ្សព្វផ្សាយប្រកបដោយប្រព័ន្ធសុវត្ថិភាព");
+  const [stFooterBadge2, setStFooterBadge2] = useState("កាលវិភាគស្វ័យប្រវត្ត");
+  const [stFooterShowClock, setStFooterShowClock] = useState(true);
+  const [stFooterShowDate, setStFooterShowDate] = useState(true);
+  const [stFooterIsSticky, setStFooterIsSticky] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [showToken, setShowToken] = useState(false);
 
@@ -161,6 +176,15 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
       setStTelegramToken(ps.telegramBotToken || "");
       setStTelegramChatId(ps.telegramChatId || "");
       setStBackupTime(ps.backupTime || "03:00");
+      setStDeveloperName(ps.developerName || "");
+      setStDeveloperTelegramLink(ps.developerTelegramLink || "");
+      setStFooterAppName(ps.footerAppName || "Facebook Video Scheduler");
+      setStFooterCopyrightText(ps.footerCopyrightText || "រក្សាសិទ្ធិគ្រប់យ៉ាង។");
+      setStFooterBadge1(ps.footerBadge1 || "ការផ្សព្វផ្សាយប្រកបដោយប្រព័ន្ធសុវត្ថិភាព");
+      setStFooterBadge2(ps.footerBadge2 || "កាលវិភាគស្វ័យប្រវត្ត");
+      setStFooterShowClock(ps.footerShowClock !== false);
+      setStFooterShowDate(ps.footerShowDate !== false);
+      setStFooterIsSticky(!!ps.footerIsSticky);
     } catch { toast(false, "មិនអាចទាញទិន្នន័យ!"); }
     finally { setLoading(false); }
   };
@@ -379,13 +403,24 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
           isAutoResponderEnabled: stAutoResp, backupSchedule: stBackupSched,
           isTelegramBackupEnabled: stTelegramEnabled,
           telegramBotToken: stTelegramToken, telegramChatId: stTelegramChatId,
-          backupTime: stBackupTime
+          backupTime: stBackupTime,
+          developerName: stDeveloperName,
+          developerTelegramLink: stDeveloperTelegramLink,
+          footerAppName: stFooterAppName,
+          footerCopyrightText: stFooterCopyrightText,
+          footerBadge1: stFooterBadge1,
+          footerBadge2: stFooterBadge2,
+          footerShowClock: stFooterShowClock,
+          footerShowDate: stFooterShowDate,
+          footerIsSticky: stFooterIsSticky
         })
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       toast(true, "✅ ការកំណត់ប្រព័ន្ធត្រូវបានរក្សាទុក!");
       setPageSetting(d.pageSettings || pageSetting);
+      // Notify Footer to re-fetch and display new developer info
+      window.dispatchEvent(new CustomEvent("settings-saved"));
     } catch (err: any) { toast(false, "❌ " + (err.message || "Save failed")); }
     finally { setSavingSettings(false); }
   };
@@ -961,6 +996,142 @@ export default function SystemManagement({ currentUser, onBack }: Props) {
                       </button>
                     </div>
                   </div>
+
+                  {/* ─── Footer Customization ─────────────────────────── */}
+                  <div className="bg-[#111115] border border-white/[0.06] rounded-2xl p-5 space-y-5">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <Code2 className="w-4 h-4 text-fuchsia-400" /> Footer Customization
+                      </h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">កំណត់ Footer ទាំងស្រុង — Copyright · Badges · Clock · Developer</p>
+                    </div>
+
+                    {/* Copyright row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">App Name (Copyright)</label>
+                        <input
+                          value={stFooterAppName}
+                          onChange={e => setStFooterAppName(e.target.value)}
+                          placeholder="Facebook Video Scheduler"
+                          className="w-full px-3 py-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/40 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Copyright Suffix Text</label>
+                        <input
+                          value={stFooterCopyrightText}
+                          onChange={e => setStFooterCopyrightText(e.target.value)}
+                          placeholder="រក្សាសិទ្ធិគ្រប់យ៉ាង។"
+                          className="w-full px-3 py-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/40 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Badge texts */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">🛡 Badge 1 Text</label>
+                        <input
+                          value={stFooterBadge1}
+                          onChange={e => setStFooterBadge1(e.target.value)}
+                          placeholder="ការផ្សព្វផ្សាយប្រកបដោយប្រព័ន្ធសុវត្ថិភាព"
+                          className="w-full px-3 py-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/40 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">📅 Badge 2 Text</label>
+                        <input
+                          value={stFooterBadge2}
+                          onChange={e => setStFooterBadge2(e.target.value)}
+                          placeholder="កាលវិភាគស្វ័យប្រវត្ត"
+                          className="w-full px-3 py-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/40 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Toggles */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center justify-between p-3.5 bg-[#16161a] rounded-xl border border-white/[0.04]">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-200">🕐 បង្ហាញ Clock</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">Live digital clock នៅ Footer</p>
+                        </div>
+                        <button type="button" onClick={() => setStFooterShowClock(p => !p)}
+                          className={`w-12 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 ${stFooterShowClock ? "bg-emerald-500 justify-end" : "bg-[#2a2a30] justify-start"}`}>
+                          <span className="w-4 h-4 rounded-full bg-white shadow-md" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between p-3.5 bg-[#16161a] rounded-xl border border-white/[0.04]">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-200">📅 បង្ហាញ Date</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">Live date badge នៅ Footer</p>
+                        </div>
+                        <button type="button" onClick={() => setStFooterShowDate(p => !p)}
+                          className={`w-12 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 ${stFooterShowDate ? "bg-emerald-500 justify-end" : "bg-[#2a2a30] justify-start"}`}>
+                          <span className="w-4 h-4 rounded-full bg-white shadow-md" />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between p-3.5 bg-[#16161a] rounded-xl border border-white/[0.04]">
+                        <div>
+                          <p className="text-xs font-semibold text-slate-200">📌 Sticky Footer</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">ភ្ជាប់ Footer ជាប់ផ្នែកខាងក្រោម (Sticky)</p>
+                        </div>
+                        <button type="button" onClick={() => setStFooterIsSticky(p => !p)}
+                          className={`w-12 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 ${stFooterIsSticky ? "bg-fuchsia-500 justify-end" : "bg-[#2a2a30] justify-start"}`}>
+                          <span className="w-4 h-4 rounded-full bg-white shadow-md" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Developer credit */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Developed by (ឈ្មោះ / ក្រុម)</label>
+                        <input
+                          value={stDeveloperName}
+                          onChange={e => setStDeveloperName(e.target.value)}
+                          placeholder="e.g. USRV Group · Seangly AD"
+                          className="w-full px-3 py-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/40 transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-1.5">Telegram Button Link</label>
+                        <div className="relative">
+                          <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                          <input
+                            value={stDeveloperTelegramLink}
+                            onChange={e => setStDeveloperTelegramLink(e.target.value)}
+                            placeholder="https://t.me/yourusername"
+                            className="w-full pl-9 pr-3 py-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl text-xs text-slate-200 font-mono placeholder:text-slate-600 focus:outline-none focus:border-fuchsia-500/40 transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live preview */}
+                    <div className="mt-1 p-3 bg-black/30 rounded-xl border border-white/[0.05]">
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2 font-semibold">Preview Footer</p>
+                      <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
+                        <span>© {new Date().getFullYear()} {stFooterAppName || "Facebook Video Scheduler"}. {stFooterCopyrightText || "រក្សាសិទ្ធិគ្រប់យ៉ាង។"}</span>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {stDeveloperName && (
+                            <span className="flex items-center gap-1 text-slate-400">
+                              <span className="text-slate-600">Developed by:</span>
+                              <span className="flex items-center gap-1 px-2 py-0.5 bg-sky-500/10 border border-sky-500/20 text-sky-300 rounded-md font-semibold">
+                                <Send className="w-2.5 h-2.5" />{stDeveloperName}
+                              </span>
+                            </span>
+                          )}
+                          <span className="text-slate-600">🛡 {stFooterBadge1 || "ការផ្សព្វផ្សាយ..."}</span>
+                          <span className="text-slate-600">📅 {stFooterBadge2 || "កាលវិភាគ..."}</span>
+                          {stFooterShowDate && <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.06] rounded-lg text-violet-400">📅 Date</span>}
+                          {stFooterShowClock && <span className="px-2 py-0.5 bg-white/[0.03] border border-white/[0.06] rounded-lg text-emerald-400 font-mono">🕐 HH:MM:SS</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </form>
               )}
 

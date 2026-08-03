@@ -1575,7 +1575,10 @@ app.get("/api/settings", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { 
       pageName, pageUsername, category, isAutoResponderEnabled, notificationSchedules, reportLogo,
-      backupSchedule, isTelegramBackupEnabled, telegramBotToken, telegramChatId, backupTime
+      backupSchedule, isTelegramBackupEnabled, telegramBotToken, telegramChatId, backupTime,
+      developerName, developerTelegramLink,
+      footerAppName, footerCopyrightText, footerBadge1, footerBadge2,
+      footerShowClock, footerShowDate, footerIsSticky
     } = req.body;
     const dbUser = await getOrCreateDbUser(req.user!);
 
@@ -1591,10 +1594,19 @@ app.get("/api/settings", requireAuth, async (req: AuthRequest, res) => {
     if (telegramBotToken !== undefined) updateData.telegramBotToken = telegramBotToken;
     if (telegramChatId !== undefined) updateData.telegramChatId = telegramChatId;
     if (backupTime !== undefined) updateData.backupTime = backupTime;
+    if (developerName !== undefined) updateData.developerName = developerName;
+    if (developerTelegramLink !== undefined) updateData.developerTelegramLink = developerTelegramLink;
+    if (footerAppName !== undefined) updateData.footerAppName = footerAppName;
+    if (footerCopyrightText !== undefined) updateData.footerCopyrightText = footerCopyrightText;
+    if (footerBadge1 !== undefined) updateData.footerBadge1 = footerBadge1;
+    if (footerBadge2 !== undefined) updateData.footerBadge2 = footerBadge2;
+    if (footerShowClock !== undefined) updateData.footerShowClock = footerShowClock;
+    if (footerShowDate !== undefined) updateData.footerShowDate = footerShowDate;
+    if (footerIsSticky !== undefined) updateData.footerIsSticky = footerIsSticky;
 
     const result = await db.update(pageSettings)
       .set(updateData)
-      .where(eq(pageSettings.userId, dbUser.id)) // Primary user
+      .where(eq(pageSettings.userId, dbUser.id))
       .returning();
     
     res.json({ success: true, pageSettings: result[0] });
