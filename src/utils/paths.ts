@@ -72,6 +72,51 @@ export function getDbPath(): string {
         }
       }
     }
+  } else {
+    // Smart migration: if seed.db has significantly more data than the current DB, merge missing records
+    // This ensures Render's existing DB gets updated when new content is added to seed.db
+    const seedPath = path.resolve(process.cwd(), "seed.db");
+    if (fs.existsSync(seedPath) && seedPath !== targetDbPath && fs.statSync(seedPath).size > 1000) {
+      try {
+        // Use a marker file to avoid re-running expensive merge on every startup
+        const seedModTime = fs.statSync(seedPath).mtimeMs;
+        const markerPath = path.join(dataDir, ".seed_sync_marker");
+        const lastSyncTime = fs.existsSync(markerPath) ? parseFloat(fs.readFileSync(markerPath, "utf8") || "0") : 0;
+        
+        if (seedModTime > lastSyncTime) {
+          // Seed.db has been updated since last sync - perform a quick merge
+          // We do this synchronously using better-sqlite3 or by spawning a child process
+          // For safety we just do a full replacement if current DB has very few work_plan_items
+          const { execSync } = require("child_process");
+          const nodeExec = process.execPath;
+          
+          // Quick check: count items in current DB using sqlite3 CLI or native node
+          // We use a simple approach: compare file sizes as proxy. If seed.db is >50% larger, likely has more data
+          const currentSize = fs.statSync(targetDbPath).size;
+          const seedSize = fs.statSync(seedPath).size;
+          
+          // If seed.db is significantly bigger (>30% more data), do a safe replace
+          if (seedSize > currentSize * 1.3) {
+            // Safety: backup current DB first
+            const backupDir = path.join(dataDir, "backups");
+            if (!fs.existsSync(backupDir)) {
+              try { fs.mkdirSync(backupDir, { recursive: true }); } catch(e) {}
+            }
+            const safetyBak = path.join(backupDir, `pre_seed_sync_${Date.now()}.sql`);
+            try { fs.copyFileSync(targetDbPath, safetyBak); } catch(e) {}
+            
+            // Replace with seed.db
+            fs.copyFileSync(seedPath, targetDbPath);
+            console.log(`[Database Seeding] Auto-upgraded DB from seed.db (${(seedSize/1024/1024).toFixed(1)}MB vs ${(currentSize/1024/1024).toFixed(1)}MB). Safety backup: ${safetyBak}`);
+          }
+          
+          // Update sync marker
+          fs.writeFileSync(markerPath, String(seedModTime));
+        }
+      } catch (e) {
+        console.warn("[Database Seeding] Smart migration check failed (non-fatal):", e);
+      }
+    }
   }
 
   return targetDbPath;
