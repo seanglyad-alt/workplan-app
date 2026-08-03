@@ -2671,33 +2671,21 @@ export default function WorkPlan({
                     <div className="min-w-[800px] space-y-4">
                       
                       {/* Grid header headings */}
-                      <div className="grid grid-cols-[110px_repeat(7,_1fr)] gap-2 text-center pb-3 border-b border-white/[0.08]">
-                        <div className="text-xs font-black text-slate-400 uppercase tracking-wider flex flex-col items-center justify-center bg-[#161720] border border-white/[0.06] rounded-xl py-2 px-1 shadow-sm">
-                          <Clock className="w-4 h-4 text-cyan-400 mb-0.5" />
-                          <span>TIME SLOT</span>
+                      <div className="grid grid-cols-[110px_repeat(7,_1fr)] gap-2 text-center pb-2.5 border-b border-white/[0.06]">
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center justify-center font-sans">
+                          TIME SLOT
                         </div>
                         {daysOfWeek.map((day, dIdx) => {
                           const fullDate = getWeekRangeLabel(selectedWeek).dates[dIdx] || "00/00/0000";
-                          const parts = fullDate.split("/");
-                          const dayNum = parts[0] || "";
-                          const monthYear = parts.slice(1).join("/") || "";
 
                           return (
-                            <div 
-                              key={day.key} 
-                              className="bg-gradient-to-b from-[#182234] via-[#121927] to-[#0e131f] border border-cyan-500/40 rounded-xl p-2 shadow-md shadow-cyan-950/40 flex flex-col items-center justify-center gap-1 group hover:border-cyan-300 transition-all"
-                            >
-                              <span className="text-xs font-black text-slate-100 tracking-wide font-sans">
+                            <div key={day.key} className="space-y-1 font-sans p-1 text-center">
+                              <span className="text-sm font-black text-white block tracking-wide">
                                 {day.kh.split(" ")[0]}
                               </span>
-                              <div className="w-full bg-cyan-950/80 border border-cyan-400/50 rounded-lg py-0.5 px-1.5 flex items-center justify-center gap-1 shadow-inner">
-                                <span className="text-base font-black font-mono text-amber-300 tracking-tight drop-shadow-[0_0_8px_rgba(252,211,77,0.5)]">
-                                  {dayNum}
-                                </span>
-                                <span className="text-[11px] font-bold font-mono text-cyan-200 opacity-95">
-                                  /{monthYear}
-                                </span>
-                              </div>
+                              <span className="text-sm font-black font-mono text-amber-300 block tracking-tight">
+                                {fullDate}
+                              </span>
                             </div>
                           );
                         })}
