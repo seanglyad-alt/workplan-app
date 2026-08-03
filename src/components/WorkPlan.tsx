@@ -446,29 +446,22 @@ export default function WorkPlan({
 
       // Select active month: prioritize month with items on initial load only
       if (data.months && data.months.length > 0) {
-        setSelectedMonthId(prevMonthId => {
-          // If user already selected a valid month that exists in the database, keep it!
-          if (prevMonthId && data.months.some((m: any) => m.id === prevMonthId)) {
-            return prevMonthId;
-          }
-          
-          const monthWithMostItems = data.months.reduce((best: any, m: any) => {
-            const count = (data.items || []).filter((i: any) => i.month === m.id || (!i.month && m.id === "2026-06")).length;
-            return count > (best.count || 0) ? { id: m.id, count } : best;
-          }, { id: "", count: 0 });
+        const monthWithMostItems = data.months.reduce((best: any, m: any) => {
+          const count = (data.items || []).filter((i: any) => i.month === m.id || (!i.month && m.id === "2026-06")).length;
+          return count > (best.count || 0) ? { id: m.id, count } : best;
+        }, { id: "", count: 0 });
 
-          if (monthWithMostItems.id && monthWithMostItems.count > 0) {
-            const monthItems = (data.items || []).filter((i: any) => i.month === monthWithMostItems.id || (!i.month && monthWithMostItems.id === "2026-06"));
-            const firstWeekWithItems = monthItems.find((i: any) => i.weekNumber !== undefined)?.weekNumber;
-            if (firstWeekWithItems && firstWeekWithItems >= 1 && firstWeekWithItems <= 5) {
-              setSelectedWeek(firstWeekWithItems);
-            }
-            return monthWithMostItems.id;
-          } else {
-            const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
-            return defaultActive ? defaultActive.id : data.months[0].id;
-          }
-        });
+        const targetMonthId = monthWithMostItems.id && monthWithMostItems.count > 0 
+          ? monthWithMostItems.id 
+          : (data.months.find((m: any) => m.status === "IN_PROGRESS")?.id || data.months[0].id);
+
+        setSelectedMonthId(targetMonthId);
+
+        const targetMonthItems = (data.items || []).filter((i: any) => i.month === targetMonthId || (!i.month && targetMonthId === "2026-06"));
+        const firstWeekWithItems = targetMonthItems.find((i: any) => i.weekNumber !== undefined)?.weekNumber;
+        if (firstWeekWithItems && firstWeekWithItems >= 1 && firstWeekWithItems <= 5) {
+          setSelectedWeek(firstWeekWithItems);
+        }
       }
       setError(null);
     } catch (err: any) {
@@ -595,10 +588,15 @@ export default function WorkPlan({
 
   useEffect(() => {
     const list = getWeeksForMonth(selectedMonthId);
-    if (!list.includes(selectedWeek)) {
-      setSelectedWeek(1);
+    const monthItems = items.filter(i => i.month === selectedMonthId || (!i.month && selectedMonthId === "2026-06"));
+    const weeksWithItems = monthItems.map(i => i.weekNumber).filter(w => w !== undefined && w >= 1 && w <= 5);
+
+    if (weeksWithItems.length > 0 && !weeksWithItems.includes(selectedWeek)) {
+      setSelectedWeek(weeksWithItems[0]);
+    } else if (!list.includes(selectedWeek)) {
+      setSelectedWeek(list[0] || 1);
     }
-  }, [selectedMonthId]);
+  }, [selectedMonthId, items]);
 
   // Post Item Management API Actions
   const handleSaveItem = async (e: FormEvent) => {
