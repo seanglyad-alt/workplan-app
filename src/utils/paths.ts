@@ -52,21 +52,23 @@ export function getDbPath(): string {
   const dataDir = getAppDataDir();
   const targetDbPath = path.join(dataDir, "local.db");
 
-  // Migration helper: If local.db does not exist in AppData, but exists in legacy locations (working dir or next to exe), copy it over!
-  if (!fs.existsSync(targetDbPath)) {
-    const legacyPaths = [
+  // Migration & Seeding helper: If local.db does not exist or is empty (< 1000 bytes), seed from seed.db or legacy local.db!
+  const isTargetEmpty = !fs.existsSync(targetDbPath) || fs.statSync(targetDbPath).size < 1000;
+  if (isTargetEmpty) {
+    const seedPaths = [
+      path.resolve(process.cwd(), "seed.db"),
       path.resolve(process.cwd(), "local.db"),
       path.resolve(path.dirname(process.execPath), "local.db")
     ];
 
-    for (const legacyPath of legacyPaths) {
-      if (fs.existsSync(legacyPath) && legacyPath !== targetDbPath) {
+    for (const seedPath of seedPaths) {
+      if (fs.existsSync(seedPath) && seedPath !== targetDbPath && fs.statSync(seedPath).size > 1000) {
         try {
-          fs.copyFileSync(legacyPath, targetDbPath);
-          console.log(`[Database Migration] Migrated legacy database from ${legacyPath} to safe AppData path: ${targetDbPath}`);
+          fs.copyFileSync(seedPath, targetDbPath);
+          console.log(`[Database Seeding] Successfully seeded target database from ${seedPath} to: ${targetDbPath}`);
           break;
         } catch (e) {
-          console.warn("[Database Migration] Failed migrating legacy db:", e);
+          console.warn("[Database Seeding] Failed seeding db:", e);
         }
       }
     }
