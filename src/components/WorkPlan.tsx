@@ -1145,27 +1145,22 @@ export default function WorkPlan({
                     margin: 0 !important;
                   }
 
-                  /* Explicit page breaks for wrapping blocks with fixed A4 height */
+                  /* Explicit page breaks for wrapping blocks with dynamic responsive height */
                   .print-week-wrapper {
                     page-break-after: always !important;
                     break-after: page !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
-                    height: 198mm !important;
-                    max-height: 198mm !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    justify-content: space-between !important;
                     margin: 0 !important;
-                    padding: 0 !important;
+                    padding-bottom: 12px !important;
                   }
                   .print-week-wrapper:last-child {
                     page-break-after: auto !important;
                     break-after: auto !important;
                   }
 
+                  .print-wrapper-card,
                   .print-month-weeks {
-                    height: 100% !important;
                     display: flex !important;
                     flex-direction: column !important;
                     justify-content: space-between !important;
@@ -1173,23 +1168,16 @@ export default function WorkPlan({
                     break-inside: avoid !important;
                   }
 
-                  .print-month-weeks > div:first-child {
-                    flex-shrink: 0 !important;
+                  .print-bottom-row {
+                    margin-top: 10px !important;
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
                   }
 
-                  .print-month-weeks > div:nth-child(2) {
-                    flex: 1 !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    justify-content: center !important;
-                    margin-top: 4px !important;
-                    margin-bottom: 4px !important;
-                  }
-
-                  .print-bottom-row,
                   .print-footer-legend {
-                    flex-shrink: 0 !important;
-                    margin-top: auto !important;
+                    padding-top: 6px !important;
+                    margin-top: 6px !important;
+                    padding-bottom: 6px !important;
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
                   }
@@ -1549,7 +1537,7 @@ export default function WorkPlan({
                 
                 {/* OPTION 1: SELECTED WEEK ONLY */}
                 {exportOption === "week" && (
-                  <div className="bg-white text-slate-900 border border-slate-300 rounded-2xl p-8 shadow-2xl font-sans print-wrapper-card print-week-only flex flex-col justify-between min-h-[780px] print:h-full print:min-h-0 print:border-none print:shadow-none print:p-0 print:m-0">
+                  <div className="bg-white text-slate-900 border border-slate-300 rounded-2xl p-8 shadow-2xl font-sans print-wrapper-card print-week-only flex flex-col justify-between space-y-6 print:space-y-2 print:border-none print:shadow-none print:p-0 print:m-0 print:pb-4">
                     
                     {/* Header Panel */}
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-5 border-b-2 border-slate-200 print:flex-row print:justify-between print:items-center print:pb-3">
@@ -1791,8 +1779,8 @@ export default function WorkPlan({
                         const wkRangeLabel = getWeekRangeLabel(wkNum);
 
                         return (
-                          <div key={wkNum} className="space-y-6 print:space-y-0 print:m-0 print:p-0 print-week-wrapper">
-                            <div className="bg-white text-slate-900 border border-slate-200 rounded-2xl p-8 shadow-lg font-sans print-wrapper-card print-month-weeks flex flex-col justify-between min-h-[780px] print:h-full print:min-h-0 print:border-none print:shadow-none print:p-0 print:m-0">
+                          <div key={wkNum} className="space-y-6 print:space-y-0 print:m-0 print:p-0 print:pb-3 print-week-wrapper">
+                            <div className="bg-white text-slate-900 border border-slate-200 rounded-2xl p-8 shadow-lg font-sans print-wrapper-card print-month-weeks flex flex-col justify-between space-y-6 print:space-y-2 print:border-none print:shadow-none print:p-0 print:m-0 print:pb-4">
                               
                               {/* Header Panel */}
                               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-5 border-b-2 border-slate-200 print:flex-row print:justify-between print:items-center print:pb-3">
