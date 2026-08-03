@@ -397,26 +397,31 @@ export default function WorkPlan({
       if (data.pages && data.pages.length > 0) setFormPageId(data.pages[0].id);
       if (data.platforms && data.platforms.length > 0) setFormPlatformId(data.platforms[0].id);
 
-      // Select active month: prioritize month with items
+      // Select active month: prioritize month with items on initial load only
       if (data.months && data.months.length > 0) {
-        const monthWithMostItems = data.months.reduce((best: any, m: any) => {
-          const count = (data.items || []).filter((i: any) => i.month === m.id || (!i.month && m.id === "2026-06")).length;
-          return count > (best.count || 0) ? { id: m.id, count } : best;
-        }, { id: "", count: 0 });
-
-        if (monthWithMostItems.id && monthWithMostItems.count > 0) {
-          setSelectedMonthId(monthWithMostItems.id);
-          
-          // Also auto-select week containing items within that month if current week has 0
-          const monthItems = (data.items || []).filter((i: any) => i.month === monthWithMostItems.id || (!i.month && monthWithMostItems.id === "2026-06"));
-          const firstWeekWithItems = monthItems.find((i: any) => i.weekNumber !== undefined)?.weekNumber;
-          if (firstWeekWithItems && firstWeekWithItems >= 1 && firstWeekWithItems <= 5) {
-            setSelectedWeek(firstWeekWithItems);
+        setSelectedMonthId(prevMonthId => {
+          // If user already selected a valid month that exists in the database, keep it!
+          if (prevMonthId && data.months.some((m: any) => m.id === prevMonthId)) {
+            return prevMonthId;
           }
-        } else {
-          const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
-          if (defaultActive) setSelectedMonthId(defaultActive.id);
-        }
+          
+          const monthWithMostItems = data.months.reduce((best: any, m: any) => {
+            const count = (data.items || []).filter((i: any) => i.month === m.id || (!i.month && m.id === "2026-06")).length;
+            return count > (best.count || 0) ? { id: m.id, count } : best;
+          }, { id: "", count: 0 });
+
+          if (monthWithMostItems.id && monthWithMostItems.count > 0) {
+            const monthItems = (data.items || []).filter((i: any) => i.month === monthWithMostItems.id || (!i.month && monthWithMostItems.id === "2026-06"));
+            const firstWeekWithItems = monthItems.find((i: any) => i.weekNumber !== undefined)?.weekNumber;
+            if (firstWeekWithItems && firstWeekWithItems >= 1 && firstWeekWithItems <= 5) {
+              setSelectedWeek(firstWeekWithItems);
+            }
+            return monthWithMostItems.id;
+          } else {
+            const defaultActive = data.months.find((m: any) => m.status === "IN_PROGRESS") || data.months[0];
+            return defaultActive ? defaultActive.id : data.months[0].id;
+          }
+        });
       }
       setError(null);
     } catch (err: any) {

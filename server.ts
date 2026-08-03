@@ -2006,6 +2006,7 @@ app.post("/api/workplan/items", requireAuth, async (req: AuthRequest, res) => {
     };
 
     const result = await db.insert(workPlanItems).values(newItem).returning();
+    invalidateWorkplanCache();
     res.status(201).json(result[0]);
   } catch (err: any) {
     console.error("Create item error:", err);
@@ -2027,6 +2028,7 @@ app.put("/api/workplan/items/:id", requireAuth, async (req: AuthRequest, res) =>
       .returning();
     
     if (!result.length) return res.status(404).json({ error: "Work plan item not found" });
+    invalidateWorkplanCache();
     res.json({ success: true, item: result[0] });
   } catch (err: any) {
     console.error("Update item error:", err);
@@ -2038,6 +2040,7 @@ app.delete("/api/workplan/items/:id", requireAuth, async (req: AuthRequest, res)
   try {
     const dbUser = await getOrCreateDbUser(req.user!);
     await db.delete(workPlanItems).where(and(eq(workPlanItems.id, req.params.id), eq(workPlanItems.userId, dbUser.id)));
+    invalidateWorkplanCache();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to delete work plan item" });
@@ -2048,6 +2051,7 @@ app.delete("/api/workplan/items/:id", requireAuth, async (req: AuthRequest, res)
 app.post("/api/workplan/months", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { id, name, nameKh, status, copyFrom } = req.body;
+    invalidateWorkplanCache();
     if (!id || !name) return res.status(400).json({ error: "Month ID and Name are required" });
 
     const dbUser = await getOrCreateDbUser(req.user!);
