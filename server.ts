@@ -2348,6 +2348,17 @@ app.get("/api/backup/list", requireAuth, async (req, res) => {
 });
 
 async function exportDbToSqlFile(destPath: string) {
+  // Always do a direct file copy — both local and Render use a local SQLite file.
+  // Render stores the DB at /var/data/local.db (persistent disk), not a remote libsql URL.
+  const dbFilePath = getDbPath();
+  if (!fs.existsSync(dbFilePath)) {
+    throw new Error("Database file not found: " + dbFilePath);
+  }
+  fs.copyFileSync(dbFilePath, destPath);
+  console.log("[Backup] Copied DB file to backup:", destPath, `(${(fs.statSync(destPath).size/1024/1024).toFixed(2)} MB)`);
+}
+
+async function exportDbToSqlFile_LEGACY_REMOTE(destPath: string) {
   const isRemoteDb = !!(process.env.DATABASE_URL && (process.env.DATABASE_URL.startsWith("libsql:") || process.env.DATABASE_URL.startsWith("http")));
 
   if (isRemoteDb) {
