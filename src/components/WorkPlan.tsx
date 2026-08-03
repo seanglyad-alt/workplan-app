@@ -376,6 +376,53 @@ export default function WorkPlan({
     }
   };
 
+  // Helper for platform distinct colors
+  const getPlatformStyle = (name: string) => {
+    const n = (name || "").toLowerCase();
+    if (n.includes("facebook") || n.includes("fb")) {
+      return { bg: "bg-blue-600/30", text: "text-blue-300", border: "border-blue-400/40", badge: "bg-blue-500/25 text-blue-200 border-blue-400/40" };
+    } else if (n.includes("telegram") || n.includes("tg")) {
+      return { bg: "bg-sky-500/30", text: "text-sky-300", border: "border-sky-400/40", badge: "bg-sky-500/25 text-sky-200 border-sky-400/40" };
+    } else if (n.includes("youtube") || n.includes("yt")) {
+      return { bg: "bg-red-600/30", text: "text-red-300", border: "border-red-400/40", badge: "bg-red-500/25 text-red-200 border-red-400/40" };
+    } else if (n.includes("tiktok") || n.includes("tt")) {
+      return { bg: "bg-pink-600/30", text: "text-pink-300", border: "border-pink-400/40", badge: "bg-pink-500/25 text-pink-200 border-pink-400/40" };
+    } else if (n.includes("instagram") || n.includes("ig")) {
+      return { bg: "bg-fuchsia-600/30", text: "text-fuchsia-300", border: "border-fuchsia-400/40", badge: "bg-fuchsia-500/25 text-fuchsia-200 border-fuchsia-400/40" };
+    } else if (n.includes("web") || n.includes("site")) {
+      return { bg: "bg-emerald-600/30", text: "text-emerald-300", border: "border-emerald-400/40", badge: "bg-emerald-500/25 text-emerald-200 border-emerald-400/40" };
+    }
+    return { bg: "bg-indigo-600/30", text: "text-indigo-300", border: "border-indigo-400/40", badge: "bg-indigo-500/25 text-indigo-200 border-indigo-400/40" };
+  };
+
+  // Helper for content type styles & icons
+  const getContentTypeStyle = (contentType: string) => {
+    const ct = (contentType || "").toLowerCase();
+    if (ct === "video") {
+      return { bg: "bg-purple-500/25", text: "text-purple-300", border: "border-purple-400/40", icon: "🎥", label: "VIDEO" };
+    } else if (ct === "poster" || ct === "image") {
+      return { bg: "bg-amber-500/25", text: "text-amber-300", border: "border-amber-400/40", icon: "🖼️", label: "POSTER" };
+    } else if (ct === "carousel") {
+      return { bg: "bg-cyan-500/25", text: "text-cyan-300", border: "border-cyan-400/40", icon: "📁", label: "CAROUSEL" };
+    }
+    return { bg: "bg-slate-500/25", text: "text-slate-300", border: "border-slate-400/40", icon: "📄", label: (contentType || "OTHER").toUpperCase() };
+  };
+
+  // Helper for post type styles
+  const getPostTypeStyle = (postType: string) => {
+    const pt = (postType || "").toLowerCase();
+    if (pt === "posted" || pt === "completed") {
+      return { bg: "bg-emerald-500/25", text: "text-emerald-300", border: "border-emerald-400/40" };
+    } else if (pt === "scheduled") {
+      return { bg: "bg-blue-500/25", text: "text-blue-300", border: "border-blue-400/40" };
+    } else if (pt === "draft") {
+      return { bg: "bg-amber-500/25", text: "text-amber-300", border: "border-amber-400/40" };
+    } else if (pt === "idea") {
+      return { bg: "bg-fuchsia-500/25", text: "text-fuchsia-300", border: "border-fuchsia-400/40" };
+    }
+    return { bg: "bg-slate-500/25", text: "text-slate-300", border: "border-slate-400/40" };
+  };
+
   // Fetch Work Plan elements from API
   const fetchWorkPlanData = async () => {
     setLoading(true);
@@ -2685,6 +2732,11 @@ export default function WorkPlan({
                                     <div className="space-y-1 w-full h-full text-left">
                                       {cellItems.map(item => {
                                         const colStyles = getStatusColor(item.status);
+                                        const targetPage = pages.find(p => p.id === item.pageId);
+                                        const pageName = targetPage?.name || item.subtitle;
+                                        const cStyle = getContentTypeStyle(item.contentType);
+                                        const pTypeStyle = getPostTypeStyle(item.postType);
+
                                         return (
                                           <div 
                                             key={item.id}
@@ -2697,24 +2749,38 @@ export default function WorkPlan({
                                               e.stopPropagation();
                                               setViewingDetailItem(item);
                                             }}
-                                            className={`p-1.5 text-[9px] leading-tight rounded-lg border-[1.5px] cursor-grab active:cursor-grabbing ${colStyles.bg} ${colStyles.border} ${colStyles.text} block hover:scale-[1.02] transition-transform`}
+                                            className={`p-2 text-[9.5px] leading-snug rounded-xl border-[1.5px] cursor-grab active:cursor-grabbing ${colStyles.bg} ${colStyles.border} ${colStyles.text} block hover:scale-[1.02] transition-transform shadow-md space-y-1.5`}
                                           >
-                                            <span className="font-extrabold line-clamp-2 block leading-none">{item.title}</span>
-                                            {item.subtitle && (
-                                              <span className="text-[8px] opacity-75 truncate block mt-0.5">{item.subtitle}</span>
+                                            <span className="font-extrabold line-clamp-2 block leading-snug">{item.title}</span>
+                                            
+                                            {pageName && (
+                                              <span className="text-[8.5px] text-cyan-300 font-semibold truncate block flex items-center gap-1 bg-cyan-950/40 border border-cyan-500/30 px-1.5 py-0.5 rounded-md w-fit max-w-full">
+                                                <span className="opacity-70">📄</span> <span className="truncate">{pageName}</span>
+                                              </span>
                                             )}
-                                            <div className="flex justify-between items-center text-[7.5px] mt-1 font-mono uppercase tracking-tight">
-                                              <span>{item.contentType}</span>
-                                              <span className="font-bold underline">{item.postType}</span>
+
+                                            <div className="flex items-center justify-between gap-1 text-[8px] font-mono uppercase font-bold pt-0.5">
+                                              <span className={`px-1.5 py-0.5 rounded-md border flex items-center gap-0.5 ${cStyle.bg} ${cStyle.text} ${cStyle.border}`}>
+                                                <span>{cStyle.icon}</span> <span>{cStyle.label}</span>
+                                              </span>
+                                              <span className={`px-1.5 py-0.5 rounded-md border font-black ${pTypeStyle.bg} ${pTypeStyle.text} ${pTypeStyle.border}`}>
+                                                {item.postType}
+                                              </span>
                                             </div>
+
                                             {item.platformId && (
-                                              <div className="mt-1.5 flex flex-wrap gap-0.5 border-t border-white/[0.04] pt-1">
+                                              <div className="mt-1 flex flex-wrap gap-1 border-t border-white/[0.08] pt-1">
                                                 {item.platformId.split(",").map(pId => {
                                                   const plat = platforms.find(pf => pf.id === pId);
-                                                  if (!plat) return null;
+                                                  const pName = plat ? plat.name : pId;
+                                                  const pStyle = getPlatformStyle(pName);
                                                   return (
-                                                    <span key={pId} className="px-1 py-0.2 bg-blue-500/10 text-[#00ebff] text-[7px] font-sans font-extrabold rounded truncate max-w-[50px]" title={plat.name}>
-                                                      {plat.name}
+                                                    <span 
+                                                      key={pId} 
+                                                      className={`px-1.5 py-0.5 text-[7.5px] font-sans font-black rounded-md border shadow-sm truncate max-w-[70px] ${pStyle.badge}`} 
+                                                      title={pName}
+                                                    >
+                                                      {pName}
                                                     </span>
                                                   );
                                                 })}
@@ -3520,22 +3586,48 @@ export default function WorkPlan({
                       ) : (
                         <div className="space-y-2 overflow-y-auto max-h-[160px] pr-1">
                           {weekItems.map(item => {
+                            const targetPage = pages.find(p => p.id === item.pageId);
+                            const pageName = targetPage?.name || item.subtitle;
+                            const cStyle = getContentTypeStyle(item.contentType);
+                            const pTypeStyle = getPostTypeStyle(item.postType);
+
                             return (
                               <div 
                                 key={item.id}
-                                className="p-2 bg-[#16161a] border border-white/[0.04] rounded-xl flex items-center justify-between gap-3 hover:border-white/[0.08]"
+                                className="p-2.5 bg-[#16161a] border border-white/[0.06] rounded-xl flex items-center justify-between gap-3 hover:border-white/[0.12] transition-colors"
                               >
-                                <div className="min-w-0 flex-1">
-                                  <span className="text-[9px] px-1.5 py-0.2 bg-white/[0.04] text-slate-400 rounded block font-mono w-fit mb-1">
-                                    {item.timeSlot} - {item.dayOfWeek.substring(0,3)}
-                                  </span>
+                                <div className="min-w-0 flex-1 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[9px] px-1.5 py-0.2 bg-white/[0.06] text-slate-300 rounded font-mono">
+                                      {item.timeSlot} - {item.dayOfWeek.substring(0,3)}
+                                    </span>
+                                    <span className={`text-[8.5px] px-1.5 py-0.2 rounded border font-bold ${cStyle.bg} ${cStyle.text} ${cStyle.border}`}>
+                                      {cStyle.icon} {cStyle.label}
+                                    </span>
+                                    <span className={`text-[8.5px] px-1.5 py-0.2 rounded border font-bold ${pTypeStyle.bg} ${pTypeStyle.text} ${pTypeStyle.border}`}>
+                                      {item.postType}
+                                    </span>
+                                  </div>
                                   <h5 className="text-xs font-bold text-white truncate">{item.title}</h5>
                                   <div className="flex flex-wrap items-center gap-1.5 mt-0.5 min-w-0">
-                                    <span className="text-[10px] text-slate-500 truncate">{item.subtitle || "ផ្សេងៗ"}</span>
-                                    {item.platformId && (
-                                      <span className="text-[8.5px] text-[#00ebff] font-mono px-1 py-0.2 bg-blue-500/10 rounded truncate max-w-[120px]" title={getPlatformNames(item.platformId)}>
-                                        {getPlatformNames(item.platformId)}
+                                    {pageName && (
+                                      <span className="text-[10px] text-cyan-300 font-semibold truncate flex items-center gap-1">
+                                        📄 {pageName}
                                       </span>
+                                    )}
+                                    {item.platformId && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {item.platformId.split(",").map(pId => {
+                                          const plat = platforms.find(pf => pf.id === pId);
+                                          const pName = plat ? plat.name : pId;
+                                          const pStyle = getPlatformStyle(pName);
+                                          return (
+                                            <span key={pId} className={`text-[8.5px] font-sans font-bold px-1.5 py-0.2 rounded-md border ${pStyle.badge}`} title={pName}>
+                                              {pName}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -3855,18 +3947,31 @@ export default function WorkPlan({
                       <strong className="text-slate-200">{viewingDetailItem.timeSlot}</strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">ប្រភេទមាតិកា (File):</span>
-                      <strong className="text-slate-200 uppercase">{viewingDetailItem.contentType}</strong>
+                      <span className="text-slate-500 block mb-0.5">ប្រភេទមាតិកា (File):</span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-bold ${getContentTypeStyle(viewingDetailItem.contentType).bg} ${getContentTypeStyle(viewingDetailItem.contentType).text} ${getContentTypeStyle(viewingDetailItem.contentType).border}`}>
+                        {getContentTypeStyle(viewingDetailItem.contentType).icon} {viewingDetailItem.contentType}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block">ប្រភេទផុស (Type):</span>
-                      <strong className="text-slate-200 uppercase">{viewingDetailItem.postType}</strong>
+                      <span className="text-slate-500 block mb-0.5">ប្រភេទផុស (Type):</span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-xs font-bold ${getPostTypeStyle(viewingDetailItem.postType).bg} ${getPostTypeStyle(viewingDetailItem.postType).text} ${getPostTypeStyle(viewingDetailItem.postType).border}`}>
+                        {viewingDetailItem.postType}
+                      </span>
                     </div>
                     <div className="col-span-2 border-t border-white/[0.04] pt-2">
-                      <span className="text-slate-500 block">ប្រព័ន្ធផ្សារភ្ជាប់ (Platforms):</span>
-                      <strong className="text-[#00ebff] font-sans font-bold text-xs">
-                        {getPlatformNames(viewingDetailItem.platformId)}
-                      </strong>
+                      <span className="text-slate-500 block mb-1">ប្រព័ន្ធផ្សារភ្ជាប់ (Platforms):</span>
+                      <div className="flex flex-wrap gap-1">
+                        {viewingDetailItem.platformId ? viewingDetailItem.platformId.split(",").map(pId => {
+                          const plat = platforms.find(pf => pf.id === pId);
+                          const pName = plat ? plat.name : pId;
+                          const pStyle = getPlatformStyle(pName);
+                          return (
+                            <span key={pId} className={`px-2 py-0.5 rounded-md border text-xs font-bold ${pStyle.badge}`}>
+                              {pName}
+                            </span>
+                          );
+                        }) : <span className="text-slate-500 text-xs">N/A</span>}
+                      </div>
                     </div>
                   </div>
 
